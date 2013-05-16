@@ -1,4 +1,3 @@
-#include <cstdlib>
 #include <string>
 #include <cmath>
 #include <cstdio>
@@ -8,7 +7,14 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
+// Using Declarations
+using std::floor;
+using std::fabs;
+using std::vector;
+using std::cout;
+using std::endl;
+using std::map;
+
 
 // Finds the harmonic value for the value n
 double harm(long n)
