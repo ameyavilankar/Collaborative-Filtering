@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <map>
 
 // Using Declarations
 using std::cin;
@@ -15,6 +16,8 @@ using std::sort;
 using std::string;
 using std::vector;
 using std::ifstream;
+using std::map;
+using std::ofstream;
 
 // Function used to determine if the current character is a colon or not
 inline bool isColon(char c)
@@ -82,45 +85,69 @@ int main()
       system("pause");
       return -1;
     }
-
-	// have to find dynamically 
-	int maxUserValue = 6040;
-	int maxMovieValue = 3952;
-
-	// The rating Matrix that will hold all the rating Data with the zeros
-    vector<vector<double> > ratingMatrix(maxUserValue);
-
-    // Create a maxUserValue X maxMovieValue Matrix of Zeros
-    for(int i = 0; i < maxUserValue; i++)
-    {
-    	vector<double> rating(maxMovieValue);
-    	ratingMatrix[i] = rating;
-    }
-    
-    // To hold the entire currentline
+	
+	// Find the maximum movie and the user value
+	int maxUserValue = 0, maxMovieValue = 0;
+	
+	// To hold the entire currentline
     std::string currentLine;
+    
+    // To hold the double values from the currentline
     std::vector<double> splitDouble;
 
-    //cout<<"Before main loop"<<endl;
+	int count = 0;	
+	map<long, int> movieMap;
+
+	while (std::getline (myfile, currentLine)) 
+    {
+		//cout<<count<<endl;
+    	// Split the currentLine and only return the double parts
+ 		splitDouble = split(currentLine);
+		
+		// Find the maximum id of the usr
+		if(splitDouble[0] > maxUserValue)
+			maxUserValue = splitDouble[0];
+		
+		// create a map from movie_id to index in the feature vector
+		if(movieMap.find(splitDouble[1]) == movieMap.end())
+		{
+			movieMap[splitDouble[1]] = count;
+			count++;
+		}
+    }
+
+	maxMovieValue = movieMap.size();
+	cout<<"Maximum Number of Users: "<<maxUserValue<<endl;
+	cout<<"Maximum number of Movies: "<<maxMovieValue<<endl;
+	
+	// The rating Matrix that will hold all the rating Data with the zeros
+    vector<vector<double> > ratingMatrix(maxUserValue, vector<double>(maxMovieValue));
+    
+	// Clear the filestream so as to read again form the beginning 
+	myfile.clear();
+	myfile.seekg(0);
+	
+    count = 0;
+    
     // Keep on reading till their are no lines
     while (std::getline (myfile, currentLine)) 
     {
+		//cout<<count<<endl;
+		count++;
     	// Split the currentLine and only return the double parts
  		splitDouble = split(currentLine);
- 		ratingMatrix[splitDouble[0]-1][splitDouble[1]-1] = splitDouble[2];
+
+		// Store the rating of the user for the corresponding movie.
+ 		ratingMatrix[(int)splitDouble[0]-1][(int)movieMap[splitDouble[1]]-1] = splitDouble[2];
     }
-
-    cout<<"Number of Users: "<<maxUserValue<<endl;
-    cout<<"Number of Movies: "<<maxMovieValue<<endl;
-    cout<<"ratingMatrix: "<<endl;
-
-    for(int i = 0; i < ratingMatrix.size(); i++)
+	
+	for(int i = 0; i < ratingMatrix.size(); i++)
     {	
     	cout<<i<<" ";
     	for(int j = 0; j < ratingMatrix[i].size(); j++)
     		cout<<ratingMatrix[i][j]<<" ";
     	cout<<endl;
     }
-
+    
 	return 0;
 }
