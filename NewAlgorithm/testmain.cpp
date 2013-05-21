@@ -54,6 +54,41 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap)
 int getClusterCenters(const char* filename, vector<vector<double> >& clusterCenters)
 {
 	// TODO
+	ifstream myfile(filename);						 // Open the file for getting the input
+    std::string currentLine;						 // To hold the entire currentline
+    std::vector<double> splitDouble;				 // To hold the double values from the currentline
+	
+    //Always test the file open.
+    if(!myfile) 
+    {
+      cout<<"Error opening output file"<<endl;
+      return -1;
+    }
+	
+	// Read till the end of the file
+	while (std::getline (myfile, currentLine)) 
+    {
+    	// Split the currentLine and only return the double parts
+ 		splitDouble = split(currentLine);
+		
+		// TODO CHECKS for first element of the splitDouble
+		clusterCenters.push_back(vector<double>(splitDouble.begin(), splitDouble.end()));
+    }
+
+	cout<<"Maximum Number of Users: "<<ratingMatrix.size()<<endl;
+	cout<<"Maximum Number of Movies:"<<ratingMatrix[0].size()<<endl;
+
+	cout<<"Rating Matrix Size: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
+	
+	/*
+	for(int i = 0; i < ratingMatrix.size(); i++)
+    {	
+    	cout<<i<<" ";
+    	for(int j = 0; j < ratingMatrix[i].size(); j++)
+    		cout<<ratingMatrix[i][j]<<" ";
+    	cout<<endl;
+    }
+    */
 
 	return 0;
 }
