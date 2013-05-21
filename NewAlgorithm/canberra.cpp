@@ -176,7 +176,7 @@ double canberra_quotient(long nl, long ne, std::vector<std::vector<long> >& list
 double canberra(std::vector< std::vector<long> >& rlists, int rk, bool rdist)
 {
 	if (rlists.empty())
-		return NULL;
+		return 0.0;
 	
 	std::vector< std::vector<long> > lists = rlists;
 	int		k = rk;
@@ -188,7 +188,7 @@ double canberra(std::vector< std::vector<long> >& rlists, int rk, bool rdist)
 	nl = rlists.size();
 
 	if (nl == 0)
-		return NULL;
+		return 0.0;
 	
 	// TODO: Check
 	//if (lists == NULL)
@@ -198,10 +198,10 @@ double canberra(std::vector< std::vector<long> >& rlists, int rk, bool rdist)
 
 	for (i = 0; i < nl; i++)
 		if (ne != lists[i].size())
-			return NULL;
+			return 0.0;
 	
 	if ((k > ne) || k <= 0) {
-		return NULL;
+		return 0.0;
 	}
 
 	float		size = (nl * (nl - 1)) / 2;
@@ -274,7 +274,7 @@ double canberraq(std::vector< std::vector<long> >& rlists, bool rcomplete, bool 
 	/* printf("nl is %d, ne is %d\n",nl, ne); */
 	for (i = 0; i < nl; i++) {
 		if (ne != lists[i].size()) {
-			return NULL;
+			return 0.0;
 		}
 	}
 
@@ -333,7 +333,7 @@ double calculate_canberradist(const vector<double>& array_one, const vector<doub
 		int movieCount = 0;
 
 
-		cout<<endl<<endl;
+		//	cout<<endl<<endl;
 
 		// Either user has rated the movie
 		for(int i = 0; i < array_one.size(); i++)
@@ -341,8 +341,8 @@ double calculate_canberradist(const vector<double>& array_one, const vector<doub
 			// Either user has rated the movie
 			if(array_one[i] != 0 || array_two[i] != 0)
 			{
-				cout<<"array_one "<<i<<" :"<<array_one[i]<<endl;
-				cout<<"array_two "<<i<<" :"<<array_two[i]<<endl;
+				//cout<<"array_one "<<i<<" :"<<array_one[i]<<endl;
+				//cout<<"array_two "<<i<<" :"<<array_two[i]<<endl;
 
 				user_one.push_back(MovieRating(i, array_one[i]));
 				
@@ -354,23 +354,23 @@ double calculate_canberradist(const vector<double>& array_one, const vector<doub
 			}
 		}
 
-		cout<<endl<<endl;
-		cout<<"Size of the user_one: "<<user_one.size()<<endl;
-		cout<<"Size of the user_two: "<<user_two.size()<<endl;
+		//cout<<endl<<endl;
+		//cout<<"Size of the user_one: "<<user_one.size()<<endl;
+		//cout<<"Size of the user_two: "<<user_two.size()<<endl;
 
-		cout<<endl<<endl;
-		cout<<"Movie Ids in user_one and their rating: "<<endl;
-		for (int i = 0; i < user_one.size(); i++)
-		{
-			cout<<user_one[i].movie_id<<" "<<array_one[user_one[i].movie_id]<<endl;
-		}	
+		//cout<<endl<<endl;
+		//cout<<"Movie Ids in user_one and their rating: "<<endl;
+		//for (int i = 0; i < user_one.size(); i++)
+		//{
+		//	cout<<user_one[i].movie_id<<" "<<array_one[user_one[i].movie_id]<<endl;
+		//}	
 
-		cout<<endl;
-		cout<<"Movie Ids in user_two and their rating: "<<endl;
-		for (int i = 0; i < user_two.size(); i++)
-		{
-			cout<<user_two[i].movie_id<<" "<<array_two[user_two[i].movie_id]<<endl;
-		}
+		//cout<<endl;
+		//cout<<"Movie Ids in user_two and their rating: "<<endl;
+		//for (int i = 0; i < user_two.size(); i++)
+		//{
+		//	cout<<user_two[i].movie_id<<" "<<array_two[user_two[i].movie_id]<<endl;
+		//}
 
 		
 		// Stable sort the two MovieRating Pair
@@ -395,16 +395,16 @@ double calculate_canberradist(const vector<double>& array_one, const vector<doub
 				rank_two[movie_universe[user_two[i].movie_id]] = -1;
 		}
 
-		cout<<endl<<endl;
-		cout<<"Final Ranks for user_one: ";
-		for (int i = 0; i < rank_one.size(); i++)
-			cout<<rank_one[i]<<" ";
-		cout<<endl;
+		//cout<<endl<<endl;
+		//cout<<"Final Ranks for user_one: ";
+		//for (int i = 0; i < rank_one.size(); i++)
+		//	cout<<rank_one[i]<<" ";
+		//cout<<endl;
 
-		cout<<"Final Ranks for user_two: ";
-		for (int i = 0; i < rank_two.size(); i++)
-			cout<<rank_two[i]<<" ";
-		cout<<endl;
+		//cout<<"Final Ranks for user_two: ";
+		//for (int i = 0; i < rank_two.size(); i++)
+		//	cout<<rank_two[i]<<" ";
+		//cout<<endl;
 
 		rlists.push_back(rank_one);
 		rlists.push_back(rank_two);
@@ -414,7 +414,7 @@ double calculate_canberradist(const vector<double>& array_one, const vector<doub
 		
 }
 
-
+/*
 int main(int argc, char const *argv[])
 {
 	std::vector<double> rating_user_one(10);
@@ -449,3 +449,5 @@ int main(int argc, char const *argv[])
 
 	return 0;
 }
+*/
+

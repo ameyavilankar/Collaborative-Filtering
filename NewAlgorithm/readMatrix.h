@@ -15,5 +15,10 @@
 #include <map>
 #include <ctime>
 
+// Used to split the string based on spaces
+std::vector<double> split(const std::string& s);
+int getRatingMatrix(const char* filename,std:: vector<std::vector<double> >& ratingMatrix);
+template<class fwditer>fwditer random_unique(fwditer begin, fwditer end, size_t num_random);
+
 #endif
 

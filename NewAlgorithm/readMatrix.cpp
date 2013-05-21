@@ -94,11 +94,12 @@ int getRatingMatrix(const char* filename, vector<vector<double> >& ratingMatrix)
 		}
 		
 		// Add it to the ratingMatrix
-		ratingMatrix.push_back(vector<double>(splitDouble.begin() + 1, splitDouble.end()));
+		//ratingMatrix.push_back(vector<double>(splitDouble.begin() + 1, splitDouble.end()));
+		ratingMatrix.push_back(vector<double>(splitDouble.begin(), splitDouble.end()));
     }
 
-	cout<<"Maximum Number of Users: "<<ratingMatrix.size();
-	cout<<"Maximum Number of Movies:"<<ratingMatrix[0].size();
+	cout<<"Maximum Number of Users: "<<ratingMatrix.size()<<endl;
+	cout<<"Maximum Number of Movies:"<<ratingMatrix[0].size()<<endl;
 
 	cout<<"Rating Matrix Size: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
 	
@@ -148,6 +149,7 @@ template<class fwditer>fwditer random_unique(fwditer begin, fwditer end, size_t 
 	return begin;
 }
 
+/*
 int main()
 {
 	vector<vector<double> > ratingMatrix;
@@ -173,3 +175,6 @@ int main()
 
 	return 0; 
 }
+*/
+
+
