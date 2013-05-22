@@ -20,7 +20,7 @@ int main()
 	vector<vector<double> > ratingMatrix;
 	int errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
 	
-	cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size();
+	//cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size();
 	
 	/*
 	TEST CODE FOR RANDOM UNIQUE
@@ -44,24 +44,29 @@ int main()
 	*/
 	
 	// Randomly Select the NUM_FEATURES Users from the existing set and get them to the front inplace
+	/*
 	cout<<"Before Random Shuffling:"<<endl;
 	for(int i = 0; i < NUM_FEATURES; i++)
 		cout<<ratingMatrix[i][0]<<" ";
 	cout<<endl<<endl;
+	*/
 
 	vector<vector<double> >::iterator newBegin = random_unique(ratingMatrix.begin(), ratingMatrix.end(), NUM_FEATURES);
 	
+	/*
 	cout<<"After Random Shuffling"<<endl;
 	for(int i = 0; i < NUM_FEATURES; i++)
 		cout<<ratingMatrix[i][0]<<" ";
 	cout<<endl<<endl;
-
+	*/
 	// Create a Canberra Distance Matrix of size Number of users X NUM_FEATURES
 	vector<vector<double> > canberraDistances;
 	
 	// For each user in the matrix calculate the canberra distance with the NUM_FEATURES randomly selected users
 	for(int i = 0; i < ratingMatrix.size(); i++)
 	{
+		//cout<<"Distance for user: "<<i<<endl;
+
 		// This will hold the Canberra distances for the current user
 		vector<double> distance(NUM_FEATURES + 1);
 
@@ -70,6 +75,8 @@ int main()
 
 		for(int j = 0; j < NUM_FEATURES; j++)
 		{
+			//cout<<j<<" ";
+
 			// Call the canberra distance function
 			distance[j + 1] = calculate_canberradist(vector<double>(ratingMatrix[i].begin() + 1, ratingMatrix[i].end()), vector<double>(ratingMatrix[j].begin() + 1, ratingMatrix[j].end()));
 		}
@@ -78,7 +85,15 @@ int main()
 		canberraDistances.push_back(distance);
 	}
 	
-	cout<<"Dimensions of the Canberra Distance Matrix: "<<canberraDistances.size()<<", "<<canberraDistances[0].size()<<endl;
+	//cout<<"Dimensions of the Canberra Distance Matrix: "<<canberraDistances.size()<<", "<<canberraDistances[0].size()<<endl;
+	
+	for(int i = 0; i < canberraDistances.size(); i++)
+	{
+		for(int j = 1; j < canberraDistances[i].size(); j++)
+			cout<<i + 1<<" "<<j<<" "<<canberraDistances[i][j]<<endl;
+		
+		cout<<endl;
+	}
 
 	return 0; 
 }
