@@ -14,11 +14,13 @@
 #include <math.h>
 #include <map>
 #include <ctime>
+#include <wctype.h>
 
 // Used to split the string based on spaces
 std::vector<double> split(const std::string& s);
-int getRatingMatrix(const char* filename,std:: vector<std::vector<double> >& ratingMatrix);
+int getRatingMatrix(const char* filename, std:: vector<std::vector<double> >& ratingMatrix);
 template<class fwditer>fwditer random_unique(fwditer begin, fwditer end, size_t num_random);
+int getRatingMatrix(const char* filename, std::map<long, std::vector<double> >& ratingMatrix);
 
 #endif
 

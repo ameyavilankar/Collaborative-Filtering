@@ -14,7 +14,7 @@ using std::ofstream;
 // Function used to determine if the current character is a colon or not
 inline bool isSpace(char c)
 {
-	return c == ' ';
+	return iswspace(c);
 }
 
 // Convert the string to its double equivalent
@@ -57,13 +57,55 @@ vector<double> split(const string& s)
 	std::vector<double> returnDouble;
 	std::transform(returnString.begin(), returnString.end(), std::back_inserter(returnDouble), getDouble);
 
-	// for(int i = 0; i < returnDouble.size(); i++)
-	// 	cout<<returnDouble[i]<<" ";
-	// cout<<endl;
+	/*
+	 for(int i = 0; i < returnDouble.size(); i++)
+	 	cout<<returnDouble[i]<<" ";
+	 cout<<endl;
+	*/
 
 	return returnDouble;
 }
 
+int getRatingMatrix(const char* filename, map< long, vector<double> >& ratingMatrix)
+{
+	ifstream myfile(filename);						 // Open the file for getting the input
+    std::string currentLine;						 // To hold the entire currentline
+    std::vector<double> splitDouble;				 // To hold the double values from the currentline
+	int userCount = 0;								 // To keep track of the number users
+
+    //Always test the file open.
+    if(!myfile) 
+    {
+      cout<<"Error opening output file"<<endl;
+      return -1;
+    }
+	
+	// Read till the end of the file
+	while (std::getline (myfile, currentLine)) 
+    {
+    	// Split the currentLine and only return the double parts
+ 		splitDouble = split(currentLine);
+			
+		// Add it to the ratingMatrix
+		//ratingMatrix.push_back(vector<double>(splitDouble.begin() + 1, splitDouble.end()));
+		ratingMatrix[splitDouble[0]] = vector<double>(splitDouble.begin() + 1, splitDouble.end());
+    }
+
+	//std::cout<<"Maximum Number of Users: "<<ratingMatrix.size()<<endl;
+	//std::cout<<"Maximum Number of Movies:"<<ratingMatrix[1].size()<<endl;
+
+	/*
+	for(int i = 0; i < ratingMatrix.size(); i++)
+    {	
+    	cout<<i<<" ";
+    	for(int j = 0; j < ratingMatrix[i].size(); j++)
+    		cout<<ratingMatrix[i][j]<<" ";
+    	cout<<endl;
+    }
+    */
+
+	return 0; 
+}
 
 int getRatingMatrix(const char* filename, vector<vector<double> >& ratingMatrix)
 {
