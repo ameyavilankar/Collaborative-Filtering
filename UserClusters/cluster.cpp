@@ -43,3 +43,28 @@ void PipeFish::Cluster::buildMovieUniverse()
 	for(std::map<long, MovieInfo>::iterator it = movieUniverse.begin(); it != movieUniverse.end(); it++)
 		it->second.averageRating /=it->second.numRatings;
 }
+
+void PipeFish::Cluster::recommendMoviesToUser()
+{
+
+	for(std::map<long, User>::iterator user_it = users.begin(); user_it != users.end(); user_it++)
+	{
+		std::vector<Movie> movieVector;
+	
+		// get the movieRating map for the user
+		std::map<long, double> ratings = user_it->second.getMovieRatings();
+
+		for(std::map<long, MovieInfo>::iterator movie_it = movieUniverse.begin(); movie_it != movieUniverse.end(); movie_it++)
+		{
+			if(ratings.find(movie_it->first) == ratings.end())
+				movieVector.push_back(/*TODO*/);
+		}
+
+		// OPTIONAL:: sort the vector according to the movie avd ratings or svd???
+		// Set the vector for the movies
+		user_it->second.setRecommendedMovies(movieVector);
+	}
+
+	
+		
+}

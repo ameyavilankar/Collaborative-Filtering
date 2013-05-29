@@ -1,9 +1,7 @@
 #include "user.h"
 
-using namespace PipeFish;
-
 // Add a new Movie and its rating 
-inline void User::addMovie(const Movie& newMovie, double rating) 
+inline void PipeFish::User::addMovie(const Movie& newMovie, double rating) 
 {
     // Check if movie is already rated by the user
     if(movieRatings.find(newMovie.getMovieId()) != movieRatings.end())
@@ -18,7 +16,7 @@ inline void User::addMovie(const Movie& newMovie, double rating)
 }
 
 // Update a rating of an existing movie
-inline void User::updateRating(const Movie& newMovie, double rating) 
+inline void PipeFish::User::updateRating(const Movie& newMovie, double rating) 
 {
     // Check if Movie is rated by the user
     if(movieRatings.find(newMovie.getMovieId()) == movieRatings.end())
@@ -32,6 +30,27 @@ inline void User::updateRating(const Movie& newMovie, double rating)
     
     // TODO:: Also have to update the ratingVector
 }
+
+void PipeFish::User::calculateMovieRatings(std::map<long, int>& movieMap)
+{
+    // Empty the current matrix
+    movieRatings.erase(movieRatings.begin(), movieRatings.end());
+
+
+    for(std::map<long, int>::const_iterator it = movieMap.begin(); it != movieMap.end(); it++)
+    {
+        // rating exists
+        if(ratingVector[it->second] != 0)
+        {
+            movieRatings[it->first] = ratingVector[it->second];
+        }
+    }    
+}
+
+
+
+
+
 
 // std::vector<double> User::getRatingMatrix() const 
 // {

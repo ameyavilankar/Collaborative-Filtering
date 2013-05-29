@@ -12,17 +12,20 @@ int main()
     // Get the rating matrix from the file
     std::vector<std::vector<double> > ratingMatrix = getRatingMatrix("ratings.txt", userMap, movieMap);
 	
-    
+    // Create the global userMap
+    std::map<long, User> userList;
     for(std::map<long, int>::const_iterator it = userMap.begin(); it != userMap.end(); it++)
     {
+        // add the user to the global user list using its id as index
+        userList[it->first] = User(user->it);
 
+        // set the rating vector for the user
+        userList[it->first].setRatingVector(ratingMatrix[it->first], movieMap);
     }
-
 
 
     // Replace by unordered_map or unordered_set
     std::map<int, Cluster> clusterMap;
-
     {
         // Open the file for getting the input
         ifstream myfile("data_with_id.txt");
@@ -42,8 +45,12 @@ int main()
         // Till there is no output or u get an error, add the user to its correpsonding cluster.
         while(myfile>>userNo>>clusterNo)
         {
-            clusterMap[clusterNo] = Cluster(clusterNo);
-            clusterMap[clusterNo].addUser(User(userNo, clusterNo));
+            // If Cluster has not been added to the map, add the cluster
+            if(clusterMap.find(clusterNo) == clusterMap.end())
+                clusterMap[clusterNo] = Cluster(clusterNo);
+
+            // add the user to its corresponding cluster
+            clusterMap[clusterNo].addUser(userList[userNo]);
         }
         
         // Clear and close the ifstream
@@ -51,6 +58,14 @@ int main()
         myfile.close();
     }
     
+    // Calculate the Cluster Centers and the Movie Universe for all of the users
+    //for(std::map<int, Cluster>::iterator it = clusterMap.begin(); it != clusterMap.end(); it++)
+    for(int i = 0; i < clusterMap.size(); i++)
+    {
+        clusterMap[i].calculateClusterCenter();
+        clusterMap[i].buildMovieUniverse();
+    }
+
 
     cout<<"Clusters and their corresponding Users SORTED according to the userid: "<<endl;
     for(std::map<int, Cluster >::const_iterator it = clusterMap.begin(); it != clusterMap.end(); it++)

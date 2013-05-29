@@ -12,7 +12,7 @@ namespace PipeFish
 		double averageRating;
 		int numRatings;
 	};
-
+	
 	// Used to represent a single cluster.
 	class Cluster
 	{
@@ -31,13 +31,14 @@ namespace PipeFish
 	    // Add user to the cluster
 	    inline void addUser(const User& user)
 	    {
-	        // add the user to the map of users
+	    	//TODO: check if required to check for preseent in hastable or not
 	        users[user.getUserId()] = user;
 	    }
 	    
 	    void calculateClusterCenter();
 	    void buildMovieUniverse();
-
+	    void recommendMoviesToUser();
+	    
 	private:
 	    int clusterId;                                          // Cluster Id to identify the cluster.
 	    std::vector<double> clusterCenter;                      // Store the center of the cluster for Difference Calculations.
