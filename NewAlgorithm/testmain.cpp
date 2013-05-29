@@ -16,6 +16,18 @@ using std::ofstream;
 using std::min_element;
 using std::distance;
 
+double squareDistance(const std::vector<double>& a, const std::vector<double>& b)
+{
+	double total = 0;
+	
+	for (size_t i = 0;i < a.size(); ++i)
+	{
+		double d = a[i] - b[i];
+		total += d * d;
+	}
+	return total;
+}
+
 // Used to get the map from the users to their assigned cluster
 int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, map<int, vector<long> >& clusterToUserMap)
 {
@@ -105,7 +117,7 @@ int main()
 	map<long, int> userToClusterMap;
 	map<int, vector<long> > clusterToUserMap;
 
-	int errorVal = getUserToClusterMap("data.txt", userToClusterMap, clusterToUserMap);
+	int errorVal = getUserToClusterMap("newdata.txt", userToClusterMap, clusterToUserMap);
 	if(errorVal != 0)
 		return errorVal;
 	cout<<"No. of users: "<<userToClusterMap.size()<<endl;
@@ -156,9 +168,23 @@ int main()
 		// Get the mean of all the clusters 
 		for(int i = 0; i < currentCenter.size(); i++)
 			currentCenter[i] /= it->second.size();
+		
+		double minDistance = std::numeric_limits<double>::max();
+		long  minUser = 0;
+		int currentDistance = 0;
 
+		for(int i = 0; i < it->second.size(); i++)
+		{
+			currentDistance = squareDistance(ratingMatrix[it->second[i]], currentCenter);
+			if(currentDistance < minDistance)
+			{
+				minDistance = currentDistance;
+				minUser = it->second[i];
+			}
+		}
+	
 		// Set it as the center of the current cluster
-		clusterCenters[it->first] = currentCenter;
+		clusterCenters[it->first] = ratingMatrix[minUser];
 	}
 	
 	cout<<"Number of Clusters:"<<clusterCenters.size()<<endl;

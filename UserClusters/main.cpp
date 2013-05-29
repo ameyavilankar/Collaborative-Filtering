@@ -1,12 +1,26 @@
-#include "cluster.h"
-#include "split.h"
+#include "main.h"
 
 using namespace std;
 using namespace PipeFish;
 
 int main()
 {
-	// Replace by unordered_map or unordered_set
+    // Create the userMap and the movieMap
+    std::map<long, int>& userMap;
+    std::map<long, int>& movieMap;
+
+    // Get the rating matrix from the file
+    std::vector<std::vector<double> > ratingMatrix = getRatingMatrix("ratings.txt", userMap, movieMap);
+	
+    
+    for(std::map<long, int>::const_iterator it = userMap.begin(); it != userMap.end(); it++)
+    {
+
+    }
+
+
+
+    // Replace by unordered_map or unordered_set
     std::map<int, Cluster> clusterMap;
 
     {
@@ -29,7 +43,7 @@ int main()
         while(myfile>>userNo>>clusterNo)
         {
             clusterMap[clusterNo] = Cluster(clusterNo);
-            clusterMap[clusterNo].addUser(User(userNo));
+            clusterMap[clusterNo].addUser(User(userNo, clusterNo));
         }
         
         // Clear and close the ifstream
@@ -108,7 +122,7 @@ int main()
 
     for(map<long, map<long, double> >::const_iterator it = ratingMatrix.begin(); it != ratingMatrix.end(); it++)
     {
-
+        
     }
 
 	return 0;

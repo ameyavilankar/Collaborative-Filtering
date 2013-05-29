@@ -17,31 +17,14 @@ const int NUM_FEATURES = 100;
 
 int main()
 {
+	// Create a map from the user id to the ratingMatrix
 	vector<vector<double> > ratingMatrix;
+
+	// Get the ratings into the map from the file
 	int errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
 	
 	//cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size();
 	
-	/*
-	TEST CODE FOR RANDOM UNIQUE
-	vector<double> values;
-	values.push_back(2);
-	values.push_back(3);
-	values.push_back(4);
-	values.push_back(5);
-	values.push_back(6);
-	values.push_back(7);
-
-	for(vector<double>::iterator it = values.begin(); it != values.end(); it++)
-		cout<<(*it)<<" ";
-	cout<<endl;
-
-	vector<double>::iterator newBegin = random_unique(values.begin(), values.end(), values.size() - 2);
-
-	for(vector<double>::iterator it = values.begin(); it != values.end(); it++)
-		cout<<(*it)<<" ";
-	cout<<endl;
-	*/
 	
 	// Randomly Select the NUM_FEATURES Users from the existing set and get them to the front inplace
 	/*
@@ -60,6 +43,7 @@ int main()
 	cout<<endl<<endl;
 	*/
 	// Create a Canberra Distance Matrix of size Number of users X NUM_FEATURES
+	
 	vector<vector<double> > canberraDistances;
 	
 	// For each user in the matrix calculate the canberra distance with the NUM_FEATURES randomly selected users
@@ -91,9 +75,33 @@ int main()
 	{
 		for(int j = 1; j < canberraDistances[i].size(); j++)
 			cout<<i + 1<<" "<<j<<" "<<canberraDistances[i][j]<<endl;
-		
-		cout<<endl;
 	}
 
+	cout<<"Order of the users selected:"<<endl;
+	for(int i = 0; i < canberraDistances.size();i++)
+		cout<<canberraDistances[i][0]<<endl;
+	
 	return 0; 
 }
+
+
+/*
+	TEST CODE FOR RANDOM UNIQUE
+	vector<double> values;
+	values.push_back(2);
+	values.push_back(3);
+	values.push_back(4);
+	values.push_back(5);
+	values.push_back(6);
+	values.push_back(7);
+
+	for(vector<double>::iterator it = values.begin(); it != values.end(); it++)
+		cout<<(*it)<<" ";
+	cout<<endl;
+
+	vector<double>::iterator newBegin = random_unique(values.begin(), values.end(), values.size() - 2);
+
+	for(vector<double>::iterator it = values.begin(); it != values.end(); it++)
+		cout<<(*it)<<" ";
+	cout<<endl;
+*/
