@@ -4,14 +4,15 @@
 #include <math.h>
 #include <map>
 #include <limits>
+#include <assert.h>
 
-
+/*
 // Function pointer that contains which distance function to call
 double (*distance_pointer)(const std::vector<double>& one, const std::vector<double>& two);
 
 double findCommon(const std::vector<double>& one, const std::vector<double>& two, distance_pointer distance)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   std::vector<double> oneCommon;
   std::vector<double> twoCommon;
@@ -25,15 +26,33 @@ double findCommon(const std::vector<double>& one, const std::vector<double>& two
 
   return distance(oneCommon, twoCommon);
 }
+*/
+
+double pearsonCoefficient(const std::vector<double>&, const std::vector<double>&);
+
+double calcPearson(const std::vector<double>& one, const std::vector<double>& two)
+{
+	std::vector<double> oneCommon;
+	std::vector<double> twoCommon;
+	
+	for(int i = 0; i < one.size(); i++)
+		if(one[i] != 0 || two[i] != 0)
+		{
+			oneCommon.push_back(one[i]);
+			twoCommon.push_back(two[i]);
+		}
+
+	return pearsonCoefficient(oneCommon, twoCommon);
+}
 
 // used to calculate the euclidean distance between two vectors
 double euclidean(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   double sum = 0.0;
   for(int i = 0; i < one.size(); i++)
-    sum += (one[i] - two[i])(one[i] - two[i])
+    sum += (one[i] - two[i]) * (one[i] - two[i]);
 
   return sum;
 }
@@ -41,7 +60,7 @@ double euclidean(const std::vector<double>& one, const std::vector<double>& two)
 // used to calculate the mean of the vector
 double mean(const std::vector<double> one)
 {
-  ASSERT(one.size() > 0)
+  assert(one.size() > 0);
 
   double mean = 0.0;
   for(int i = 0 ; i < one.size(); i++)
@@ -53,7 +72,7 @@ double mean(const std::vector<double> one)
 // calculates the pearson coefficient between two vectors
 double pearsonCoefficient(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   // Calculate the mean of the two vectors
   double meanOne = mean(one);
@@ -69,7 +88,7 @@ double pearsonCoefficient(const std::vector<double>& one, const std::vector<doub
   for(int i = 0; i < one.size(); i++)
   {
     oneDiff = (one[i] - meanOne);
-    twoDiff = (two[i] - twoDiff);
+    twoDiff = (two[i] - meanTwo);
 
     prodDiff += oneDiff * twoDiff;
     oneSqrDiff += oneDiff * oneDiff;
@@ -82,7 +101,7 @@ double pearsonCoefficient(const std::vector<double>& one, const std::vector<doub
 // calculates the cosine similarity between two vectors
 double consineDistance(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   double oneSqrSum = 0.0;
   double twoSqrSum = 0.0;
@@ -95,17 +114,17 @@ double consineDistance(const std::vector<double>& one, const std::vector<double>
   }
 
   double denominator = sqrt(oneSqrSum * twoSqrSum);
-
+  
   if(denominator == 0)
     return 1.0;
   else
-    return 1.0 - numerator/denominator;
+    return 1.0 - prodSum/denominator;
 }
 
 // calculates the jaccardDistance between the two vectors
 double jaccardDistance(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   int unionCount = 0;
   int intersectionCount = 0;
@@ -128,7 +147,7 @@ double jaccardDistance(const std::vector<double>& one, const std::vector<double>
 // calculates the tanimoto distance between two vectors 
 double tanimoto(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   double oneSqrSum = 0.0;
   double twoSqrSum = 0.0;
@@ -144,12 +163,12 @@ double tanimoto(const std::vector<double>& one, const std::vector<double>& two)
   if((oneSqrSum + twoSqrSum - prodSum) == 0)
     return 1.0;
 
-  return product/(oneSqrSum + twoSqrSum - prodSum);
+  return prodSum/(oneSqrSum + twoSqrSum - prodSum);
 }
 
 double manhattanDistance(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   double distance = 0.0;
   for(int i = 0; i < one.size(); i++)
@@ -160,7 +179,7 @@ double manhattanDistance(const std::vector<double>& one, const std::vector<doubl
 
 double chebychev(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   double max = std::numeric_limits<double>::min();
 
@@ -174,7 +193,7 @@ double chebychev(const std::vector<double>& one, const std::vector<double>& two)
 // NOT SURE ABOUT THIS DISTANCE MEASURE
 double slopeOneDistance(const std::vector<double>& one, const std::vector<double>& two)
 {
-  ASSERT(one.size() == two.size());
+  assert(one.size() == two.size());
 
   double sumDiff = 0.0;
   for(int i = 0; i < one.size(); i++)

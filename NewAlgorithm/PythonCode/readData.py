@@ -1,27 +1,35 @@
 import numpy as np
 
-UMatrix = np.zeros((100, 6040))
+UMatrix = np.zeros((6040, 100))
 VMatrix = np.zeros((100, 100))
 
-SingularValues = np.loadtxt('singularvalues.txt')
+SingularValues = np.loadtxt('Outputsingular_values')
+SingularMatrix = np.zeros((100, 100))
+
+
+for i in xrange(SingularMatrix.shape[0]):
+	SingularMatrix[i][i] = SingularValues[i]
+
+
 print "Singular: ", SingularValues.shape
 
 for i in xrange(100):
-		UMatrix[i] = np.loadtxt('SVDOutput.txtU.' + str(i) + '_1_of_1')
-		VMatrix[i] = np.loadtxt('SVDOutput.txtV.' + str(i) + '_1_of_1')
+	tempU = np.loadtxt('OutputU.' + str(i) + '_1_of_1')
+	tempV = np.loadtxt('OutputV.' + str(i) + '_1_of_1')
+	UMatrix[:,i] = tempU
+	VMatrix[:,i] = tempV
+
 
 print "UMatrix: ", UMatrix.shape
 print "VMatrix: ", VMatrix.shape
 
-output = np.zeros((6040, 100))
 
-for i in xrange(100):
-	output = np.add(output, SingularValues[i] * np.outer(UMatrix[i], VMatrix[i]))
+output = np.dot(np.dot(UMatrix, SingularMatrix), VMatrix.T)
 
-print "Output: ", output.shape
+print "Output shape", output.shape
 
 for i in xrange(output.shape[0]):
+	print i, " ",
 	for j in xrange(output.shape[1]):
 		print output[i][j], " ",
 	print ""
-

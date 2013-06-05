@@ -6,5 +6,6 @@
 
 #include "canberra.h"
 #include "readMatrix.h"
+#include "distances.h"
 
 #endif
