@@ -225,8 +225,8 @@ double chebychev(const std::vector<double>& one, const std::vector<double>& two)
   double max = std::numeric_limits<double>::min();
 
   for(int i = 0; i < one.size(); i++)
-    if(std::abs(one[i] - two[i]) > max)
-      max = std::abs(one[i] - two[i]);
+    if(abs(one[i] - two[i]) > max)
+      max = abs(one[i] - two[i]);
 
   return max;
 }

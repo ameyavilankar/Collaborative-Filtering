@@ -5,6 +5,7 @@
 #include <map>
 #include <limits>
 #include <assert.h>
+#include <stdio.h>
 
 /*
 // Function pointer that contains which distance function to call
@@ -29,6 +30,7 @@ double findCommon(const std::vector<double>& one, const std::vector<double>& two
 */
 
 double pearsonCoefficient(const std::vector<double>&, const std::vector<double>&);
+double euclidean(const std::vector<double>&, const std::vector<double>&);
 
 double calcPearson(const std::vector<double>& one, const std::vector<double>& two)
 {
@@ -36,14 +38,34 @@ double calcPearson(const std::vector<double>& one, const std::vector<double>& tw
 	std::vector<double> twoCommon;
 	
 	for(int i = 0; i < one.size(); i++)
-		if(one[i] != 0 || two[i] != 0)
+		if(one[i] != 0 && two[i] != 0)
 		{
 			oneCommon.push_back(one[i]);
 			twoCommon.push_back(two[i]);
 		}
-
+	
+	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
+	
 	return pearsonCoefficient(oneCommon, twoCommon);
 }
+
+double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two)
+{
+	std::vector<double> oneCommon;
+	std::vector<double> twoCommon;
+	
+	for(int i = 0; i < one.size(); i++)
+		if(one[i] != 0 && two[i] != 0)
+		{
+			oneCommon.push_back(one[i]);
+			twoCommon.push_back(two[i]);
+		}
+	
+	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
+	
+	return euclidean(oneCommon, twoCommon);
+}
+
 
 // used to calculate the euclidean distance between two vectors
 double euclidean(const std::vector<double>& one, const std::vector<double>& two)
@@ -60,7 +82,7 @@ double euclidean(const std::vector<double>& one, const std::vector<double>& two)
 // used to calculate the mean of the vector
 double mean(const std::vector<double> one)
 {
-  assert(one.size() > 0);
+  assert(one.size() >= 0);
 
   double mean = 0.0;
   for(int i = 0 ; i < one.size(); i++)
@@ -94,8 +116,27 @@ double pearsonCoefficient(const std::vector<double>& one, const std::vector<doub
     oneSqrDiff += oneDiff * oneDiff;
     twoSqrDiff += twoDiff * twoDiff;
   }
+  
+  double denominator = sqrt(oneSqrDiff * twoSqrDiff);
+	
+  /*
+  std::cout<<"Pearson Coefficient: "<<prodDiff/denominator<<std::endl;
+  std::cout<<"oneSqrDiff: "<<oneSqrDiff<<" twoSqrDIff "<<twoSqrDiff<<std::endl;
+  std::cout<<"OneCommon: ";
+  
+  for(int i = 0; i < one.size(); i++)
+	  std::cout<<one[i]<<" ";
+  std::cout<<std::endl;
+  
+  for(int i = 0; i < two.size(); i++)
+	  std::cout<<two[i]<<" ";
+  std::cout<<std::endl;
+  */
 
-  return prodDiff/sqrt(oneSqrDiff * twoSqrDiff);
+  if(denominator == 0)
+	  return 0;
+
+  return prodDiff/denominator;
 }
 
 // calculates the cosine similarity between two vectors
@@ -184,8 +225,8 @@ double chebychev(const std::vector<double>& one, const std::vector<double>& two)
   double max = std::numeric_limits<double>::min();
 
   for(int i = 0; i < one.size(); i++)
-    if(std::abs(one[i] - two[i]) > max)
-      max = std::abs(one[i] - two[i]);
+    if(abs(one[i] - two[i]) > max)
+      max = abs(one[i] - two[i]);
 
   return max;
 }

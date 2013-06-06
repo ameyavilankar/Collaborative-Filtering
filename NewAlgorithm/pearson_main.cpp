@@ -91,7 +91,7 @@ int main()
 		pearsonDistances.push_back(distance);
 	}
 	
-	cout<<"Dimensions of the Canberra Distance Matrix: "<<pearsonDistances.size()<<", "<<pearsonDistances[0].size()<<endl;
+	cout<<"Dimensions of the Pearson Distance Matrix: "<<pearsonDistances.size()<<", "<<pearsonDistances[0].size()<<endl;
 	
 	// Save it to the file
 	ofstream outfile;
