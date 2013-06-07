@@ -244,11 +244,26 @@ if __name__ == "__main__":
 	
 	#-------------------------------------------------------------------------------#
 	print "Saving to files..."
-	open('RecommendedItemsUserBased.json', 'w') as f: f.write(json.dumps(members))
-	open('TopSimilarUsers.json', 'w') as f: f.write(json.dumps(members))
-	open('TopSimilarItems.json', 'w') as f: f.write(json.dumps(members))
-	open('RecommendedItemsItemBased.json', 'w') as f: f.write(json.dumps(members))
+	print "Saving RecommendItemsUserBased..."
+	f = open('RecommendedItemsUserBased.json', 'w')
+	f.write(json.dumps(recommendedItemsUserBased, sort_keys=True, indent=4, separators=(',', ': ')))
+	f.close()
 	
+	print "Saving TopSimilarUsers..."
+	f = open('TopSimilarUsers.json', 'w')
+	f.write(json.dumps(topSimilarUsers, sort_keys=True, indent=4, separators=(',', ': ')))
+	f.close()
+	
+	print "Saving TopSimilar Items..."
+	f = open('TopSimilarItems.json', 'w')
+	f.write(json.dumps(topSimilarMovies, sort_keys=True, indent=4, separators=(',', ': ')))
+	f.close()
+	
+	print "Saving RecommendedItemsItemBased..."
+	f = open('RecommendedItemsItemBased.json', 'w')
+	f.write(json.dumps(recommendedItemsItemBased, sort_keys=True, indent=4, separators=(',', ': ')))
+	f.close()
+
 	#-------------------------------------------------------------------------------#
 	print "Done with both Collaborative Filtering Techniques..."
 	print "Starting Evaluation..."

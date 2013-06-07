@@ -6,6 +6,7 @@
 #include <limits>
 #include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /*
 // Function pointer that contains which distance function to call

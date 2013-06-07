@@ -30,44 +30,6 @@ double findCommon(const std::vector<double>& one, const std::vector<double>& two
 }
 */
 
-double pearsonCoefficient(const std::vector<double>&, const std::vector<double>&);
-double euclidean(const std::vector<double>&, const std::vector<double>&);
-
-double calcPearson(const std::vector<double>& one, const std::vector<double>& two)
-{
-	std::vector<double> oneCommon;
-	std::vector<double> twoCommon;
-	
-	for(int i = 0; i < one.size(); i++)
-		if(one[i] != 0 && two[i] != 0)
-		{
-			oneCommon.push_back(one[i]);
-			twoCommon.push_back(two[i]);
-		}
-	
-	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
-	
-	return pearsonCoefficient(oneCommon, twoCommon);
-}
-
-double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two)
-{
-	std::vector<double> oneCommon;
-	std::vector<double> twoCommon;
-	
-	for(int i = 0; i < one.size(); i++)
-		if(one[i] != 0 && two[i] != 0)
-		{
-			oneCommon.push_back(one[i]);
-			twoCommon.push_back(two[i]);
-		}
-	
-	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
-	
-	return euclidean(oneCommon, twoCommon);
-}
-
-
 // used to calculate the euclidean distance between two vectors
 double euclidean(const std::vector<double>& one, const std::vector<double>& two)
 {
@@ -139,6 +101,42 @@ double pearsonCoefficient(const std::vector<double>& one, const std::vector<doub
 
   return prodDiff/denominator;
 }
+
+double calcPearson(const std::vector<double>& one, const std::vector<double>& two)
+{
+	std::vector<double> oneCommon;
+	std::vector<double> twoCommon;
+	
+	for(int i = 0; i < one.size(); i++)
+		if(one[i] != 0 && two[i] != 0)
+		{
+			oneCommon.push_back(one[i]);
+			twoCommon.push_back(two[i]);
+		}
+	
+	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
+	
+	return pearsonCoefficient(oneCommon, twoCommon);
+}
+
+double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two)
+{
+	std::vector<double> oneCommon;
+	std::vector<double> twoCommon;
+	
+	for(int i = 0; i < one.size(); i++)
+		if(one[i] != 0 && two[i] != 0)
+		{
+			oneCommon.push_back(one[i]);
+			twoCommon.push_back(two[i]);
+		}
+	
+	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
+	
+	return euclidean(oneCommon, twoCommon);
+}
+
+
 
 // calculates the cosine similarity between two vectors
 double consineDistance(const std::vector<double>& one, const std::vector<double>& two)
