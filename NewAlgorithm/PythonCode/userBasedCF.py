@@ -1,7 +1,3 @@
-def ddf():
-	pass
-
-
 from math import sqrt
 
 
@@ -53,7 +49,7 @@ def pearson_similarity(prefs, person1, person2):
 	denominator = sqrt((sumsqr1 - pow(sum1, 2)/n) * (sumsqr2 - pow(sum2, 2)/n))
 
 	if denominator == 0:
-	return 0
+		return 0
 
 	return numerator/denominator
 
@@ -61,15 +57,15 @@ def tanimoto (list1, list2):
 	intersection = [common_item for common_item in list1 if common_item in list2]
 	return float(len(c))/(len(a) + len(b) - len(c))
 
-def topSimilarUsers(prefs, person, n = 10, similarity = pearson_similarity):
-	# Calculate the similarity score of person with all the other persons in prefs except himself/herself
+def topMatches(prefs, person, n = 10, similarity = pearson_similarity):
+	# Calculate the similarity score of person/item with all the other persons/items in prefs except himself/herself/itself
 	scores = [(similarity(prefs, person, otherPerson), otherPerson) for otherPerson in prefs if otherPerson != person] 
 
-	# sort the list of the persons according to the scores in descending order
+	# sort the list of the persons/items according to the scores in descending order
 	scores.sort()
 	scores.reverse()
 
-	# return the top n similar users
+	# return the top n similar users/items
 	return scores[0:n]
 
 # returns all the users that have correlation greater than zero
@@ -88,29 +84,36 @@ def positiveCorrelationUsers(prefs, person):
 	return scores
 
 # gets the recommendations for the person
-def getRecommendations(prefs,person,similarity = sim_pearson):
+def getRecommendations(prefs, person, similarity = pearson_similarity):
 	totals = {}
 	simSums = {}
 	
-	for other in prefs:
-		# don't compare me to myself
-		if other == person: continue
-		sim = similarity(prefs,person,other)
+	for otherPerson in prefs:
+		# Dont compare person to self
+		if otherPerson == person:
+			continue
+
+		# Calculate the similarity score
+		similarityScore = similarity(prefs, person, otherPerson)
 		
-		# ignore scores of zero or lower
-		if sim <= 0: continue
-		for item in prefs[other]:
-			# only score movies I haven't seen yet
-			if item not in prefs[person] or prefs[person][item] == 0:
-			# Similarity * Score
-			totals.setdefault(item,0)
-			totals[item] += prefs[other][item] * sim
-			# Sum of similarities
-			simSums.setdefault(item,0)
-			simSums[item] += sim
+		# Ignore Similarity Scores of zero or lower
+		if similarityScore <= 0:
+			continue
+
+		# If Similarity Score is greater than zero, use the person in the recommendation
+		for movie in prefs[otherPerson]:
+			# Only score movies person hasn't seen yet
+			if movie not in prefs[person] or prefs[person][movie] == 0:
+				# Calculate the sum of the rating given by otherPerson weighted by their similarity score
+				totals.setdefault(movie, 0)
+				totals[movie] += prefs[other][movie] * similarityScore
+
+				# Calculate the sum of similarity scores to normalize the predicted rating
+				simSums.setdefault(movie, 0)
+				simSums[movie] += similarityScore
 	
-	# Create the normalized list
-	rankings=[(total/simSums[item],item) for item,total in totals.items()]
+	# Create the normalized list by dividing the sum of weighted scores by sum of similarity scores
+	rankings = [(total/simSums[movie], movie) for movie, total in totals.items()]
 	
 	# Return the sorted list
 	rankings.sort()
@@ -118,19 +121,20 @@ def getRecommendations(prefs,person,similarity = sim_pearson):
 	
 	return rankings
 
-# Convert from user to item-based clustering
+# Convert from user-item dict to item-user dict
 def transformPrefs(prefs):
-	result={}
+	result = {}
 
 	# Flip item and person
 	for person in prefs:
 		for item in prefs[person]:
-			result.setdefault(item,{})
+			result.setdefault(item, {})
 			result[item][person] = prefs[person][item]
 	
 	return result
 
-def calculateSimilarItems(prefs,n = 10):
+
+def calculateSimilarMovies(prefs, n = 10):
 	# Create a dictionary of items showing which other items they are most similar to.
 	similarItems = {}
 	
@@ -141,55 +145,98 @@ def calculateSimilarItems(prefs,n = 10):
 	for item in itemPrefs:
 		# Status updates for large datasets
 		count = count + 1
-		if count % 100 == 0: print "%d / %d" % (count,len(itemPrefs))
+		if count % 100 == 0: print "%d / %d" % (count, len(itemPrefs))
 		
 		# Find the most similar items to this one
-		scores = topMatches(itemPrefs,item,n = n,similarity = sim_distance)
-		similarItems[item]=scores
+		scores = topMatches(itemPrefs, item, n = n, similarity = euclidean_similarity)
+		similarItems[item] = scores
 
 	return similarItems
 
-def getRecommendedItems(prefs,itemMatch,user):
-	userRatings=prefs[user]
-	scores={}
-	totalSim={}
+def getRecommendedItems(prefs, itemMatch, user):
+	userRatings = prefs[user]
+	scores = {}
+	totalSim = {}
 
 	# Loop over items rated by this user
-	for (item,rating) in userRatings.items():
+	for (item, rating) in userRatings.items():
 		# Loop over items similar to this one
-		for (similarity,item2) in itemMatch[item]:
+		for (similarity, item2) in itemMatch[item]:
 			# Ignore if this user has already rated this item
-			if item2 in userRatings: continue
+			if item2 in userRatings:
+				continue
 			
 			# Weighted sum of rating times similarity
-			scores.setdefault(item2,0)
-			scores[item2]+=similarity*rating
+			scores.setdefault(item2, 0)
+			scores[item2] += similarity * rating
 			
 			# Sum of all the similarities
-			totalSim.setdefault(item2,0)
-			totalSim[item2]+=similarity
+			totalSim.setdefault(item2, 0)
+			totalSim[item2] += similarity
 
 	# Divide each total score by total weighting to get an average
 	rankings=[(score/totalSim[item],item) for item,score in scores.items()]
 	
 	# Return the rankings from highest to lowest
-	rankings.sort( )
-	rankings.reverse( )
+	rankings.sort()
+	rankings.reverse()
 	return rankings
 
-def loadMovieLens(path='/data/movielens'):
+
+def loadMovieLens(path = '/data/movielens'):
 	# Get movie titles
-	movies={}
-	for line in open(path+'/u.item'):
+	movies = {}
+	for line in open(path + '/u.item'):
 		(id,title)=line.split('|')[0:2]
 		movies[id]=title
 	
 	# Load data
-	prefs={}
-	for line in open(path+'/u.data'):
-		(user,movieid,rating,ts)=line.split('\t')
+	prefs = {}
+	for line in open(path + '/u.data'):
+		(user,movieid,rating, ts) = line.split('\t')
 		prefs.setdefault(user,{})
 		prefs[user][movies[movieid]]=float(rating)
 	
 	return prefs
+
+# main method
+if __name__ == "__main__":
+	# Load the preferences from the movieLens dataset
+	personToMovie = loadMovieLens()
+
+	#----------------------------  USER BASED CF -----------------------------------#
+	
+	# Get the recommended items for each person using the pearson similarity score
+	recommendedItemsUserBased = {}
+	for person in personToMovie:
+		recommendedItemsUserBased.setdefault(person, [])
+		recommendedItemsUserBased[person] = getRecommendations(personToMovie, person)
+
+	# Get the top N similar users for each person using the pearson similarity score
+	topSimilarUsers = {}
+	for person in personToMovie:
+		topSimilarUsers.setdefault(person, [])
+		topSimilarUsers[person] = topMatches(personToMovie, person)
+	
+	#-------------------------------------------------------------------------------#
+		
+	#-----------------------------  ITEM BASED CF ----------------------------------#
+	
+	# Calculate for each item the top similar items to itself: Item-Item Matrix
+	topSimilarMovies = calculateSimilarMovies(personToMovie)
+
+	# Calculate the recommended items for each user using the item-item matrix
+	recommendedItemsItemBased = {}
+	for person in personToMovie:
+		recommendedItemsItemBased.setdefault(person, [])
+		recommendedItemsItemBased[person] = getRecommendedItems(personToMovie, topSimilarMovies, person)
+
+	#-------------------------------------------------------------------------------#
+	
+	# Evaluation Measures:??
+
+
+
+
+
 
