@@ -1,5 +1,5 @@
 from math import sqrt
-
+import json
 
 def euclidean_similarity(prefs, person1, person2):
 	# Get the list of the commonly rated movies
@@ -7,12 +7,12 @@ def euclidean_similarity(prefs, person1, person2):
 
 	# Find the common movies and them to the dictionary
 	for movie in prefs[person1]:
-	for movie in prefs[person2]:
-	  commonMovies[movie] = 1
+		if movie in prefs[person2]:
+			commonMovies[movie] = 1
 
 	# if no common movies return no similarity
 	if len(commonMovies) == 0:
-	return 0
+		return 0
 
 	# Calculate the sum of powers of the differences in movie ratings
 	distance = sqrt(sum([pow((prefs[person1][movie] - prefs[person2][movie]), 2) for movie in commonMovies]))
@@ -26,16 +26,16 @@ def pearson_similarity(prefs, person1, person2):
 
 	# Find the common movies and add them to the dictionary
 	for movie in prefs[person1]:
-	for movie in prefs[person2]:
-	  commonMovies[movie] = 1
-
+		if movie in prefs[person2]:
+			commonMovies[movie] = 1
+	
 	# if no common movies return no similarity
 	if len(commonMovies) == 0:
-	return 0
-
+		return 0
+	
 	# Find the sum of the movie ratings for the common movies
-	sum1 = sum([prefs[person1][movie]] for movie in commonMovies)
-	sum2 = sum([prefs[person2][movie]] for movie in commonMovies)  
+	sum1 = sum(prefs[person1][movie] for movie in commonMovies)
+	sum2 = sum(prefs[person2][movie] for movie in commonMovies)  
 
 	# Find the sum of the square of the movie ratings for the common movies
 	sumsqr1 = sum([pow(prefs[person1][movie], 2) for movie in commonMovies])
@@ -45,6 +45,7 @@ def pearson_similarity(prefs, person1, person2):
 	sumProducts = sum([prefs[person1][movie] * prefs[person2][movie] for movie in commonMovies])
 
 	# Calculate Pearson score
+	n = len(commonMovies)
 	numerator = sumProducts - (sum1 * sum2/n)
 	denominator = sqrt((sumsqr1 - pow(sum1, 2)/n) * (sumsqr2 - pow(sum2, 2)/n))
 
@@ -106,7 +107,7 @@ def getRecommendations(prefs, person, similarity = pearson_similarity):
 			if movie not in prefs[person] or prefs[person][movie] == 0:
 				# Calculate the sum of the rating given by otherPerson weighted by their similarity score
 				totals.setdefault(movie, 0)
-				totals[movie] += prefs[other][movie] * similarityScore
+				totals[movie] += prefs[otherPerson][movie] * similarityScore
 
 				# Calculate the sum of similarity scores to normalize the predicted rating
 				simSums.setdefault(movie, 0)
@@ -183,17 +184,17 @@ def getRecommendedItems(prefs, itemMatch, user):
 	return rankings
 
 
-def loadMovieLens(path = '/data/movielens'):
-	# Get movie titles
+def loadMovieLens():
+	# Build a dictionary from the movies to their titles
 	movies = {}
-	for line in open(path + '/u.item'):
-		(id,title)=line.split('|')[0:2]
+	for line in open('movies.dat'):
+		(id,title)=line.split('::')[0:2]
 		movies[id]=title
 	
-	# Load data
+	# Build the dictionary from user to movie titles to their ratings
 	prefs = {}
-	for line in open(path + '/u.data'):
-		(user,movieid,rating, ts) = line.split('\t')
+	for line in open('ratings.dat'):
+		(user,movieid,rating, ts) = line.split('::')
 		prefs.setdefault(user,{})
 		prefs[user][movies[movieid]]=float(rating)
 	
@@ -202,39 +203,57 @@ def loadMovieLens(path = '/data/movielens'):
 # main method
 if __name__ == "__main__":
 	# Load the preferences from the movieLens dataset
+	print "Loading the dataset..."
 	personToMovie = loadMovieLens()
 
 	#----------------------------  USER BASED CF -----------------------------------#
+	print "Starting User Based CF..."
 	
+	print "Getting the recommended items for each person..."
 	# Get the recommended items for each person using the pearson similarity score
 	recommendedItemsUserBased = {}
 	for person in personToMovie:
+		print "Person ", person
 		recommendedItemsUserBased.setdefault(person, [])
 		recommendedItemsUserBased[person] = getRecommendations(personToMovie, person)
-
+	
+	print "Getting the top similar users for each person..."
 	# Get the top N similar users for each person using the pearson similarity score
 	topSimilarUsers = {}
 	for person in personToMovie:
+		print "Person ", person
 		topSimilarUsers.setdefault(person, [])
 		topSimilarUsers[person] = topMatches(personToMovie, person)
 	
 	#-------------------------------------------------------------------------------#
 		
 	#-----------------------------  ITEM BASED CF ----------------------------------#
-	
+	print "Starting the Item Based CF..."
+
+	print "Caclulating top similar items for each item"
 	# Calculate for each item the top similar items to itself: Item-Item Matrix
 	topSimilarMovies = calculateSimilarMovies(personToMovie)
-
+	
+	print "Calculating the recommendations for each user..."
 	# Calculate the recommended items for each user using the item-item matrix
 	recommendedItemsItemBased = {}
 	for person in personToMovie:
+		print "Person", person
 		recommendedItemsItemBased.setdefault(person, [])
 		recommendedItemsItemBased[person] = getRecommendedItems(personToMovie, topSimilarMovies, person)
-
-	#-------------------------------------------------------------------------------#
 	
+	#-------------------------------------------------------------------------------#
+	print "Saving to files..."
+	open('RecommendedItemsUserBased.json', 'w') as f: f.write(json.dumps(members))
+	open('TopSimilarUsers.json', 'w') as f: f.write(json.dumps(members))
+	open('TopSimilarItems.json', 'w') as f: f.write(json.dumps(members))
+	open('RecommendedItemsItemBased.json', 'w') as f: f.write(json.dumps(members))
+	
+	#-------------------------------------------------------------------------------#
+	print "Done with both Collaborative Filtering Techniques..."
+	print "Starting Evaluation..."
 	# Evaluation Measures:??
-
+	# TODO Evaluation Metrics
 
 
 
