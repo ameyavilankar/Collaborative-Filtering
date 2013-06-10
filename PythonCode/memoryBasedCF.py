@@ -1,6 +1,15 @@
 from math import sqrt
 import json
 
+def whatisthis(s):
+    if isinstance(s, str):
+	print "ordinary string"
+    elif isinstance(s, unicode):
+	print "unicode string"
+    else:
+	print "not a string"
+
+
 def euclidean_similarity(prefs, person1, person2):
 	# Get the list of the commonly rated movies
 	commonMovies = {}
@@ -200,6 +209,15 @@ def loadMovieLens():
 	
 	return prefs
 
+def saveToFile(filename, dict):
+    f = open(filename, "w")
+    for key, value in dict.iteritems():
+	f.write(key + ": \n")
+	for x in value:
+	    f.write(x[1] + ": " + str(x[0]) + "\n")
+	f.write("\n\n")
+    f.close()
+
 # main method
 if __name__ == "__main__":
 	# Load the preferences from the movieLens dataset
@@ -213,10 +231,10 @@ if __name__ == "__main__":
 	# Get the recommended items for each person using the pearson similarity score
 	recommendedItemsUserBased = {}
 	for person in personToMovie:
-		print "Person ", person
+		# print "Person ", person
 		recommendedItemsUserBased.setdefault(person, [])
-		recommendedItemsUserBased[person] = getRecommendations(personToMovie, person)
-	
+		recommendedItemsUserBased[person] =  getRecommendations(personToMovie, person)
+    
 	print "Getting the top similar users for each person..."
 	# Get the top N similar users for each person using the pearson similarity score
 	topSimilarUsers = {}
@@ -242,7 +260,21 @@ if __name__ == "__main__":
 		recommendedItemsItemBased.setdefault(person, [])
 		recommendedItemsItemBased[person] = getRecommendedItems(personToMovie, topSimilarMovies, person)
 	
+	print "Saving to files..."
+	print "Saving RecommendItemsUserBased..."
+	saveToFile('RecommendedItemsUserBased.txt', recommendedItemsUserBased)
+
+	print "Saving TopSimilarUsers..."
+	saveToFile('TopSimilarUsers.txt', topSimilarUsers)
+	
+	print "Saving TopSimilar Items..."
+	saveToFile('TopSimilarItems.txt', topSimilarMovies)
+	
+	print "Saving RecommendedItemsItemBased..."
+	saveToFile('RecommendedItemsItemBased.txt', recommendedItemsItemBased)
+
 	#-------------------------------------------------------------------------------#
+	"""
 	print "Saving to files..."
 	print "Saving RecommendItemsUserBased..."
 	f = open('RecommendedItemsUserBased.json', 'w')
@@ -268,9 +300,4 @@ if __name__ == "__main__":
 	print "Done with both Collaborative Filtering Techniques..."
 	print "Starting Evaluation..."
 	# Evaluation Measures:??
-	# TODO Evaluation Metrics
-
-
-
-
-
+	"""
