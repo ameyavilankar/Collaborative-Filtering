@@ -30,37 +30,51 @@ def readData(filename):
     return (userids, data)
 
 def pearson(v1,v2):
+	commonV1 = []
+	commonV2 = []
+	# Find the common movies and add them to the dictionary
+	for i in xrange(len(v1)):
+		if v1[i] != 0 and v2[i] != 0:
+			commonV1.append(v1[i])
+			commonV2.append(v2[i])
+
+	if len(commonV1) == 0:
+		return 1
+
 	# Simple sums
-	sum1=sum(v1)
-	sum2=sum(v2)
+	sum1=sum(commonV1)
+	sum2=sum(commonV2)
 
 	# Sums of the squares
-	sum1Sq=sum([pow(v,2) for v in v1])
-	sum2Sq=sum([pow(v,2) for v in v2])
+	sum1Sq=sum([pow(v,2) for v in commonV1])
+	sum2Sq=sum([pow(v,2) for v in commonV2])
 
 	# Sum of the products
-	pSum=sum([v1[i]*v2[i] for i in range(len(v1))])
+	pSum=sum([commonV1[i]*commonV2[i] for i in range(len(commonV1))])
 
 	# Calculate r (Pearson score)
-	num=pSum-(sum1*sum2/len(v1))
-	den=sqrt((sum1Sq-pow(sum1,2)/len(v1))*(sum2Sq-pow(sum2,2)/len(v1)))
+	num=pSum-(sum1*sum2/len(commonV1))
+	den=sqrt((sum1Sq-pow(sum1,2)/len(commonV1))*(sum2Sq-pow(sum2,2)/len(commonV1)))
 
-	if den==0:
+	if den == 0:
 		return 0
 	
-	return 1.0-num/den
+	return 1.0 - num/den
 
 def scaledown(data, distance = pearson, rate = 0.01):
 	n = len(data)
 
+	print "Calculating the distance matrix..."
 	# The real distances between every pair of items
 	realdist = [[distance(data[i], data[j]) for j in range(n)] for i in range(0, n)]
 	outersum = 0.0
 	
+	print "Creating the Matrix of random locations..."
 	# Randomly initialize the starting points of the locations in 2D
 	loc = [[random.random(), random.random()] for i in range(n)]
 	fakedist = [[0.0 for j in range(n)] for i in range(n)]
 	
+	print "Trying to minimize the L2 Error"
 	lasterror = None
 	for m in range(0, 1000):
 		# Find projected distances
