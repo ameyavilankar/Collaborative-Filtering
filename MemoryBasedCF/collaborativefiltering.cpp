@@ -1,4 +1,4 @@
-#include "readPreferences.h"
+#include "collaborativefiltering.h"
 
 // Using Declarations
 using std::cin;
@@ -115,7 +115,8 @@ std::map<std::string, std::map<long, double> > transformPrefs(const std::map<lon
 	return movieToUser;
 }
 
-std::vector<std::pair<long, double> > topMatches(std::map<long, std::map<std::string, double> >& userToMovie, long user, int n)
+
+std::vector<std::pair<long, double> > topMatchesUsers(std::map<long, std::map<std::string, double> >& userToMovie, long user, int n)
 {
 	// To hold the users and the similarity scores
 	std::vector<std::pair<long, double> > scores;
@@ -143,6 +144,42 @@ std::vector<std::pair<long, double> > topMatches(std::map<long, std::map<std::st
 
 	// sort them in the descending order of scores
 	std::sort(scores.begin(), scores.end(), compare_scores_user);
+	
+	// keep only the top n elements
+	scores.resize(n);
+
+	return scores;
+}
+
+
+std::vector<std::pair<std::string, double> > topMatchesMovies(std::map<std::string, std::map<long, double> >& movieToUser, std::string movie, int n)
+{
+	// To hold the users and the similarity scores
+	std::vector<std::pair<std::string, double> > scores;
+
+	// Used for holding the common movies to cacluate the similarity scores
+	std::vector<double> one, two;
+	double score = 0.0;
+
+	// Go through all other users except for the user
+	for(std::map<std::string, std::map<long, double> >::const_iterator movie_iter = movieToUser.begin(); movie_iter != movieToUser.end(); movie_iter++)
+		if(movie_iter->first != movie)
+		{
+			for(std::map<long, double>::const_iterator user_iter = movie_iter->second.begin(); user_iter != movie_iter->second.end(); user_iter++)
+				if(movieToUser[movie].find(user_iter->first) != movieToUser[movie].end())
+				{
+					//Found Common Movie
+					one.push_back(movieToUser[movie][user_iter->first]);
+					two.push_back(user_iter->second);
+				}
+
+			// Calculate the similarity score and add it to the vector
+			score = pearsonCoefficient(one, two);
+			scores.push_back(std::make_pair<std::string, double>(movie_iter->first, score));
+		}
+
+	// sort them in the descending order of scores
+	std::sort(scores.begin(), scores.end(), compare_scores_movie);
 	
 	// keep only the top n elements
 	scores.resize(n);
@@ -236,3 +273,55 @@ std::vector<std::pair<std::string, double> > getRecommendations(std::map<long, s
 
 	return recommendations;
 }
+
+
+std::map<std::string, std::vector<std::pair<std::string, double> > > calculateSimilarMovies(std::map<std::string, std::map<long, double> >& movieToUser, int n)
+{
+	std::map<std::string, std::vector<std::pair<std::string, double> > > similarItems;
+	std::vector<std::pair<std::string, double> > scores;
+
+	int count = 0;
+	for(std::map<std::string, std::map<long, double> >::const_iterator movie_iter = movieToUser.begin(); movie_iter != movieToUser.end(); movie_iter++)
+	{
+		count++;
+		if(count % 100 == 0)
+			cout<<"("<<count<<",\t"<<movieToUser.size()<<")"<<endl;
+
+		scores = topMatchesMovies(movieToUser, movie_iter->first);
+		similarItems[movie_iter->first] = scores;
+	}
+
+	return similarItems;
+}
+
+/*
+
+def getRecommendedItems(prefs, itemMatch, user):
+	userRatings = prefs[user]
+	scores = {}
+	totalSim = {}
+
+	# Loop over items rated by this user
+	for (item, rating) in userRatings.items():
+		# Loop over items similar to this one
+		for (similarity, item2) in itemMatch[item]:
+			# Ignore if this user has already rated this item
+			if item2 in userRatings:
+				continue
+			
+			# Weighted sum of rating times similarity
+			scores.setdefault(item2, 0)
+			scores[item2] += similarity * rating
+			
+			# Sum of all the similarities
+			totalSim.setdefault(item2, 0)
+			totalSim[item2] += similarity
+
+	# Divide each total score by total weighting to get an average
+	rankings=[(score/totalSim[item],item) for item,score in scores.items()]
+	
+	# Return the rankings from highest to lowest
+	rankings.sort()
+	rankings.reverse()
+	return rankings
+*/
