@@ -275,10 +275,53 @@ std::vector<std::pair<std::string, double> > getRecommendations(std::map<long, s
 }
 
 
+std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsUserBased(std::map<long, std::map<std::string, double> >& userToMovie)
+{
+	std::map<long, std::vector<std::pair<std::string, double> > > recommendedItemsUserBased;
+
+	for(std::map<long, std::map<std::string, double> >::const_iterator user_iter = userToMovie.begin(); user_iter != userToMovie.end(); user_iter++)
+	{
+		//std::cout<<"User id: "<<user_iter->first<<std::endl;
+		recommendedItemsUserBased[user_iter->first] = getRecommendations(userToMovie, user_iter->first);
+	}
+
+	return recommendedItemsUserBased;
+}
+
+
+std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsItemBased(std::map<std::string, std::map<long, double> >& movieToUser)
+{
+	std::map<long, std::vector<std::pair<std::string, double> > > recommendedItemsItemBased;
+
+	for(std::map<std::string, std::map<long, double> >::const_iterator movie_iter = movieToUser.begin(); movie_iter != movieToUser.end(); movie_iter++)
+	{
+		//std::cout<<"User id: "<<user_iter->first<<std::endl;
+		recommendedItemsUserBased[user_iter->first] = getRecommendations(userToMovie, user_iter->first);
+	}
+}
+
+std::map<long, std::vector<std::pair<long, double> > > calculateSimilarUsers(std::map<long, std::map<std::string, double> >& userToMovie, int n)
+{
+	std::map<long, std::vector<std::pair<long, double> > > similarUsers;
+
+	int count = 0;
+	for(std::map<long, std::map<std::string, double> >::const_iterator user_iter = userToMovie.begin(); user_iter != userToMovie.end(); user_iter++)
+	{
+		count++;
+		if(count % 100 == 0)
+			cout<<"("<<count<<",\t"<<userToMovie.size()<<")"<<endl;
+
+		similarUsers[user_iter->first] = topMatchesUsers(userToMovie, user_iter->first);
+	}
+
+	return similarUsers;
+}
+
+
+
 std::map<std::string, std::vector<std::pair<std::string, double> > > calculateSimilarMovies(std::map<std::string, std::map<long, double> >& movieToUser, int n)
 {
 	std::map<std::string, std::vector<std::pair<std::string, double> > > similarItems;
-	std::vector<std::pair<std::string, double> > scores;
 
 	int count = 0;
 	for(std::map<std::string, std::map<long, double> >::const_iterator movie_iter = movieToUser.begin(); movie_iter != movieToUser.end(); movie_iter++)
@@ -287,8 +330,8 @@ std::map<std::string, std::vector<std::pair<std::string, double> > > calculateSi
 		if(count % 100 == 0)
 			cout<<"("<<count<<",\t"<<movieToUser.size()<<")"<<endl;
 
-		scores = topMatchesMovies(movieToUser, movie_iter->first);
-		similarItems[movie_iter->first] = scores;
+		
+		similarItems[movie_iter->first] = topMatchesMovies(movieToUser, movie_iter->first);
 	}
 
 	return similarItems;
