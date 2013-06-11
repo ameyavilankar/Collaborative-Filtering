@@ -123,7 +123,7 @@ double calcEuclidean(const std::vector<double>& one, const std::vector<double>& 
 	return euclidean(oneCommon, twoCommon);
 }
 
-# Calculate the similarity measure
+// Calculate the similarity measure
 double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector<double>& two)
 {
 	return (1.0/(1.0 + calcEuclidean(one, two)));
@@ -132,7 +132,7 @@ double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector
 // calculates the cosine similarity between two vectors
 double consineDistance(const std::vector<double>& one, const std::vector<double>& two)
 {
-	assert(one.size() == two.size())
+	assert(one.size() == two.size());
 	
 	double oneSqrSum = 0.0;
 	double twoSqrSum = 0.0;

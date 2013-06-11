@@ -1,6 +1,7 @@
 #include "main.h"
 #include "readMatrix.cpp"
 #include "canberra.cpp"
+#include "math.h"
 
 // Using Declarations
 using std::cin;
@@ -64,6 +65,8 @@ int main()
 	vector<long >::iterator newBegin = random_unique(userVector.begin(), userVector.end(), NUM_FEATURES);
 	int zeroCount = 0;
 	vector<vector<double> > pearsonDistances;
+	double coefficient = 0.0;
+
 	// For each user in the matrix calculate the canberra distance with the NUM_FEATURES randomly selected users
 	for(int i = 0; i < ratingMatrix.size(); i++)
 	{
@@ -79,8 +82,8 @@ int main()
 			// Call the canberra distance function
 			//cout<<"Distance between "<<i<<" and "<<userMap[userVector[j]]<<endl;
 
-			distance[j + 1] = calcPearson(vector<double>(ratingMatrix[i].begin() + 1, ratingMatrix[i].end()), vector<double>(ratingMatrix[userMap[userVector[j]]].begin() + 1, ratingMatrix[userMap[userVector[j]]].end()));
-			
+			coefficient  = calcPearson(vector<double>(ratingMatrix[i].begin() + 1, ratingMatrix[i].end()), vector<double>(ratingMatrix[userMap[userVector[j]]].begin() + 1, ratingMatrix[userMap[userVector[j]]].end()));
+			distance[j + 1] = sqrt(0.5 *(1 - coefficient));
 			if(distance[j + 1] == 0)
 				zeroCount++;
 

@@ -167,7 +167,9 @@ int main()
 
 		for(int i = 0; i < it->second.size(); i++)
 		{
-			currentDistance  = euclidean(ratingMatrix[it->second[i]], currentCenter);
+			currentDistance  = calcPearson(ratingMatrix[it->second[i]], currentCenter);
+			currentDistance  = sqrt(0.5 *(1 - currentDistance));
+			
 			if(currentDistance < minDistance)
 			{
 				minDistance = currentDistance;
@@ -181,7 +183,7 @@ int main()
 
 		for(int i = 0; i < it->second.size(); i++)
 		{
-			clusterUserDistances[it->first][it->second[i]] = (int)((1 - abs(calcPearson(clusterCenters[it->first], ratingMatrix[it->second[i]]))) * 10 + 1);
+			clusterUserDistances[it->first][it->second[i]] = (int)((sqrt(0.5 * (1 - calcPearson(clusterCenters[it->first], ratingMatrix[it->second[i]])))) * 100);
 		}
 	}
 	
@@ -210,7 +212,9 @@ int main()
 
 			// Calculate the canberra distance
 			currentDistance = calcPearson(vector<double>(rating_iter->second.begin(), rating_iter->second.end()), vector<double>(cluster_it->second.begin(), cluster_it->second.end()));
-
+			currentDistance  = sqrt(0.5 *(1 - currentDistance));
+			
+			// TODO:: TODO:: check for multiple matches to minvalue
 			if(currentDistance < minValue)
 			{
 				minValue = currentDistance;
@@ -279,7 +283,7 @@ int main()
 		{
 			count++;
 			//cout<<"Calculating: "<<it->first<<" "<<second_it->first<<endl<<" "<<count<<endl;
-			int distance =  (int)((1 - abs(calcPearson(it->second, second_it->second))) * 10 + 1);
+			int distance =  (int)((sqrt( 0.5 * ( 1 - calcPearson(it->second, second_it->second)))) * 100);
 			clusterToClusterDistances[it->first][second_it->first] = distance;
 			second_it++;
 		}
@@ -328,9 +332,9 @@ int main()
 		
 			for(int i = 0; i < it->second.size(); i++)
 			{
-				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
-				outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"},\n";
-				lineCount++;
+				//outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
+				//outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"},\n";
+				//lineCount++;
 				linkCount++;
 			}
 
