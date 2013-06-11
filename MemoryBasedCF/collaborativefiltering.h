@@ -20,6 +20,7 @@
 #include "utilityfunctions.h"
 #include "distances.h"
 
+//-------------------------------READING, SAVING AND TRANSFORMING--------------------------------------------------------------------------------------------------------
 // Used to Load the dataset
 int loadDataSet(char *moviefile, char *ratingsfile, std::map<long, std::map<std::string, double> >& userToMovie);
 
@@ -28,7 +29,10 @@ int saveToFile(char* filename, const std::map<long, std::vector<std::pair<std::s
 
 // Convert the user-to-movie ratings to movie-to-user ratings
 std::map<std::string, std::map<long, double> > transformPrefs(const std::map<long, std::map<std::string, double> >& userToMovie);
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+//-----------------------------FINDING TOP SIMILAR MOVIES/USERS or TOP RECOMMENDATIONS FOR SINGLE USER-------------------------------------------------------------------
 // Get the top N users similar to a user
 std::vector<std::pair<long, double> > topMatchesUsers(std::map<long, std::map<std::string, double> >& userToMovie, long user, int n = 20);
 
@@ -40,13 +44,22 @@ std::vector<std::pair<long, double> > positiveCorrelationUsers(const std::map<lo
 
 // Get the recommended movies for user using user-based CF
 std::vector<std::pair<std::string, double> > getRecommendations(const std::map<long, std::map<std::string, double> >& userToMovie, long user);
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+// Get the top recommendations using User-Based CF
+std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsUserBased(std::map<long, std::map<std::string, double> >& userToMovie);
+
+// Get the top recommendations using Item-Based CF
+std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsItemBased(std::map<std::string, std::map<long, double> >& movieToUser);
 
 // Calculates top N similar for all users
-void calculateSimilarUsers(std::map<long, std::map<std::string, double> >& userToMovie, int n = 20);
+std::map<long, std::vector<std::pair<long, double> > > calculateSimilarUsers(std::map<long, std::map<std::string, double> >& userToMovie, int n = 20);
 
 // Calculates top N similar for all movies
 std::map<std::string, std::vector<std::pair<std::string, double> > > calculateSimilarMovies(std::map<std::string, std::map<long, double> >& movieToUser, int n = 20);
-
+//-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /*
 Templated function to
