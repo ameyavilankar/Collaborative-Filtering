@@ -1,5 +1,5 @@
 #ifndef COLLABORATIVE_FILTERING_H
-#define COLLABORAIVE_FILTERING_H
+#define COLLABORATIVE_FILTERING_H
 
 // readPreferences.h -v1.0
 // AUTHOR AMEYA VILANKAR
@@ -43,7 +43,10 @@ std::vector<std::pair<std::string, double> > topMatchesMovies(std::map<std::stri
 std::vector<std::pair<long, double> > positiveCorrelationUsers(const std::map<long, std::map<std::string, double> >& userToMovie, long user, int n = 20);
 
 // Get the recommended movies for user using user-based CF
-std::vector<std::pair<std::string, double> > getRecommendations(const std::map<long, std::map<std::string, double> >& userToMovie, long user);
+std::vector<std::pair<std::string, double> > getRecommendationsUBSingle(const std::map<long, std::map<std::string, double> >& userToMovie, long user);
+
+// Get the recommended movies for user using user-based CF
+std::vector<std::pair<std::string, double> > getRecommendationsIBSingle(const std::map<long, std::map<std::string, double> >& userToMovie, std::map<std::string, std::vector<std::pair<std::string, double> > >& topSimilarMovies, long user);
 //------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -52,7 +55,7 @@ std::vector<std::pair<std::string, double> > getRecommendations(const std::map<l
 std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsUserBased(std::map<long, std::map<std::string, double> >& userToMovie);
 
 // Get the top recommendations using Item-Based CF
-std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsItemBased(std::map<std::string, std::map<long, double> >& movieToUser);
+std::map<long, std::vector<std::pair<std::string, double> > > getRecommendationsItemBased(std::map<long, std::map<std::string, double> >& userToMovie, std::map<std::string, std::vector<std::pair<std::string, double> > >& topSimilarMovies);
 
 // Calculates top N similar for all users
 std::map<long, std::vector<std::pair<long, double> > > calculateSimilarUsers(std::map<long, std::map<std::string, double> >& userToMovie, int n = 20);
