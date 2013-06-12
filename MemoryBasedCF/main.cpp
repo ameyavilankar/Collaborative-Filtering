@@ -18,7 +18,7 @@ int main()
 	// Load the dataset into the map
 	cout<<"Loading the Dataset...\n";
 	std::map<long, std::map<std::string, double> > userToMovie;
-	int errorval = loadDataSet("movies.dat", "rating.dat", userToMovie);
+	int errorval = loadDataSet("movies.dat", "ratings.dat", userToMovie);
 	if(errorval != 0)
 		return errorval;
 
