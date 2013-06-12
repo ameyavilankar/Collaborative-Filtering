@@ -1,4 +1,6 @@
 from math import sqrt
+import random
+from PIL import Image,ImageDraw
 
 def readData(filename):
 	# Open the file for reading data
@@ -18,9 +20,11 @@ def readData(filename):
         
         print "Number of Lines: ", len(lines)
         for line in lines:
-        	lineList = line.split("\n")[0].split(" ")
-        	lineList.pop(len(lineList) - 1)
-        	list1 = [float(j) for j in lineList]
+        	#lineList = line.split("\n")[0].split(" ")
+        	#print lineList
+		#lineList.pop(len(lineList) - 1)
+		lineList = line.split()
+		list1 = [float(j) for j in lineList]
         	userids.append(list1[0])
         	list1.pop(0)
         	# Add to the data
@@ -57,9 +61,9 @@ def pearson(v1,v2):
 	den=sqrt((sum1Sq-pow(sum1,2)/len(commonV1))*(sum2Sq-pow(sum2,2)/len(commonV1)))
 
 	if den == 0:
-		return 0
+	    return 1.0
 	
-	return 1.0 - num/den
+	return 1.1 - num/den
 
 def scaledown(data, distance = pearson, rate = 0.01):
 	n = len(data)
@@ -121,19 +125,24 @@ def draw2d(data, labels, jpeg = 'mds2d.jpg'):
 	img = Image.new('RGB', (2000, 2000), (255, 255, 255))
 	draw = ImageDraw.Draw(img)
 	
+	print len(data)
 	for i in range(len(data)):
 		x = (data[i][0] + 0.5) * 1000
 		y = (data[i][1] + 0.5) * 1000
-	
-	draw.text((x, y),labels[i],(0, 0, 0))
+		draw.text((x, y),labels[i],(0, 0, 0))
+
 	img.save(jpeg, 'JPEG')
 
 if __name__ == "__main__":
 	print "Loading Dataset..."
-	(userids, data) = readData('ratings.txt')
+	(userids, data) = readData('ratings_with_id.txt')
 
 	print "Calculating Locations..."
 	location = scaledown(data)
+	
+	labels = [str(id) for id in userids]
+	print labels
+	print location
 
 	print "Drawing the Image..."
-	draw2d(location, userids, jpeg='2DClusters.jpg')
+	draw2d(location, labels, jpeg='2DClusters.jpg')
