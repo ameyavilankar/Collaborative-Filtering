@@ -337,8 +337,7 @@ map<long, vector<pair<string, double> > > getRecommendationsUserBased(map<long, 
 	return recommendedItemsUserBased;
 }
 
-/*
-map<long, vector<pair<string, double> > > getRecommendationsItemBased(map<long, map<string, double> >& userToMovie, map<string, vector<pair<string, double> > > topSimilarMovies)
+map<long, vector<pair<string, double> > > getRecommendationsItemBased(map<long, map<string, double> >& userToMovie, map<string, vector<pair<string, double> > >& topSimilarMovies)
 {
 	map<long, vector<pair<string, double> > > recommendedItemsItemBased;
 
@@ -350,7 +349,6 @@ map<long, vector<pair<string, double> > > getRecommendationsItemBased(map<long, 
 
 	return recommendedItemsItemBased;
 }
-*/
 
 map<long, vector<pair<long, double> > > calculateSimilarUsers(map<long, map<string, double> >& userToMovie, int n)
 {
