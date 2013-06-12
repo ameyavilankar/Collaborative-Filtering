@@ -33,7 +33,7 @@ bool compare_scores_movie(const pair<string, double>& one, const pair<string, do
 }
 
 // Used to Load the dataset
-int loadDataSet(char *moviefile, char *ratingsfile, map<long, map<string, double> >& userToMovie)
+int loadDataSet(const string& moviefile, const string& ratingsfile, map<long, map<string, double> >& userToMovie)
 {
 	string currentLine;						 // To hold the entire currentline
 	map<long, string> movieMap;			 // Maps from the movie id to their  title
@@ -41,7 +41,7 @@ int loadDataSet(char *moviefile, char *ratingsfile, map<long, map<string, double
 	{	
 		vector<string> splitData;				 // To hold the double values from the currentline
 		// Build a map from movie_ids to their titles
-		ifstream infile(moviefile);						 // Open the file for getting the input
+		ifstream infile(moviefile.c_str());						 // Open the file for getting the input
 
 		//Always test the file open.
 		if(!infile) 
@@ -66,7 +66,7 @@ int loadDataSet(char *moviefile, char *ratingsfile, map<long, map<string, double
 	
 	{
 		ifstream infile;
-		infile.open(ratingsfile);
+		infile.open(ratingsfile.c_str());
 		vector<double> splitDouble;
 		
 		// Always tes the file

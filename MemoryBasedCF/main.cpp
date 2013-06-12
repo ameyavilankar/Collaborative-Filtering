@@ -40,7 +40,7 @@ int main()
 	map<string, vector<pair<string, double> > > topSimilarMovies = calculateSimilarMovies(movieToUser);
 	
 	cout<<"Calculating the recommendations for each user...\n";
-	map<long, vector<pair<string, double> > > recommendedItemsItemBased = getRecommendationsItemBased(movieToUser);
+	map<long, vector<pair<string, double> > > recommendedItemsItemBased = getRecommendationsItemBased(userToMovie, topSimilarMovies);
 
 	cout<<"Saving to files...\n";
 	cout<<"Saving Recommendations UserBased...\n";

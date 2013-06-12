@@ -22,7 +22,7 @@
 
 //-------------------------------READING, SAVING AND TRANSFORMING--------------------------------------------------------------------------------------------------------
 // Used to Load the dataset
-int loadDataSet(char *moviefile, char *ratingsfile, std::map<long, std::map<std::string, double> >& userToMovie);
+int loadDataSet(const std::string& moviefile, const std::string& ratingsfile, std::map<long, std::map<std::string, double> >& userToMovie);
 
 // Used to save the results to a file
 int saveToFile(char* filename, const std::map<long, std::vector<std::pair<std::string, double> > >& recommendations);

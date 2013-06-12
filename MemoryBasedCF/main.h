@@ -6,5 +6,7 @@
 #include "utilityfunctions.h"
 #include "distances.h"
 #include "collaborativefiltering.h"
+#include "collaborativefiltering.cpp"
+#include "distances.cpp"
 
 #endif
