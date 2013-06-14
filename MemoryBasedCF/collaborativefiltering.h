@@ -25,7 +25,7 @@
 int loadDataSet(const std::string& moviefile, const std::string& ratingsfile, std::map<long, std::map<std::string, double> >& userToMovie);
 
 // Used to save the results to a file
-int saveToFile(char* filename, const std::map<long, std::vector<std::pair<std::string, double> > >& recommendations);
+void saveToFile(char* filename, const std::map<long, std::vector<std::pair<std::string, double> > >& recommendations);
 
 // Convert the user-to-movie ratings to movie-to-user ratings
 std::map<std::string, std::map<long, double> > transformPrefs(const std::map<long, std::map<std::string, double> >& userToMovie);
@@ -101,5 +101,22 @@ template<class T1, class T2> std::vector<std::pair<T1, double> > topMatches(std:
 	return scores;
 }
 */
+
+
+template<class T1, class T2> void saveRecommendations(std::string filename, const std::map<T1, std::vector<std::pair<T2, double> > >& recommendations)
+{
+	std::ofstream outfile;
+	outfile.open(filename.c_str());
+
+	for(typename std::map<T1, std::vector<std::pair<T2, double> > >::const_iterator it = recommendations.begin(); it != recommendations.end(); it++)
+	{
+		outfile<<it->first<<":\n";
+		for(int i = 0; i < it->second.size(); i++)
+			outfile<<it->second[i].first<<" "<<it->second[i].second<<"\n";
+		std::cout<<"\n";
+	}
+	
+	outfile.close();	
+}
 
 #endif

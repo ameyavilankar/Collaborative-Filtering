@@ -89,7 +89,7 @@ int loadDataSet(const string& moviefile, const string& ratingsfile, map<long, ma
 	return 0;
 }
 
-int saveToFile(char* filename, const map<long, vector<pair<string, double> > >& recommendations)
+void saveToFile(char* filename, const map<long, vector<pair<string, double> > >& recommendations)
 {
 	ofstream outfile;
 	outfile.open(filename);

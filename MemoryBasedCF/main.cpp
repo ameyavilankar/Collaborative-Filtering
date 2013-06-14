@@ -21,7 +21,6 @@ int main()
 	int errorval = loadDataSet("movies.dat", "ratings.dat", userToMovie);
 	if(errorval != 0)
 		return errorval;
-
 	
 	// USER-BASED CF
 	cout<<"Starting the User Based CF...\n";
@@ -44,9 +43,18 @@ int main()
 
 	cout<<"Saving to files...\n";
 	cout<<"Saving Recommendations UserBased...\n";
+	saveRecommendations("recommendedItemsUserBased.txt", recommendedItemsUserBased);
+	
 	cout<<"Saving Top Similar Users...\n";
+	saveRecommendations("topSimilarUsers.txt", topSimilarUsers);
+
 	cout<<"Saving Top Similar Movies...\n";
+	saveRecommendations("topSimilarMovies", topSimilarMovies);
+
 	cout<<"Saving Recommendations ItemBased...\n";
+	saveRecommendations("recommendedItemsItemBased.txt", recommendedItemsItemBased);
+
+	// Metrics
 
 	return 0;
 }
