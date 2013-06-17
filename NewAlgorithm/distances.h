@@ -129,6 +129,31 @@ double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector
 	return (1.0/(1.0 + calcEuclidean(one, two)));
 }
 
+
+// calculates the cosine similarity between two vectors
+double cosineSimilarity(const std::vector<double>& one, const std::vector<double>& two)
+{
+	assert(one.size() == two.size());
+	
+	double oneSqrSum = 0.0;
+	double twoSqrSum = 0.0;
+	double prodSum = 0.0;
+	
+	for(int i = 0; i < one.size(); i++)
+	{
+		prodSum += (one[i] * two[i]);
+		oneSqrSum += one[i] * one[i];
+		twoSqrSum += two[i] * two[i];
+  	}
+	
+	double denominator = sqrt(oneSqrSum * twoSqrSum);
+	
+	if(denominator == 0)
+		return 0;
+	else
+		return prodSum/denominator;
+}
+
 // calculates the cosine similarity between two vectors
 double consineDistance(const std::vector<double>& one, const std::vector<double>& two)
 {

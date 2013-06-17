@@ -55,7 +55,7 @@ int main()
 	map<long, int> userMap;
 	vector<long> userVector(ratingMatrix.size());
 
-	for(int i = 0; i <ratingMatrix.size(); i++)
+	for(int i = 0; i < ratingMatrix.size(); i++)
 	{
 		userMap[ratingMatrix[i][0]] = i;
 		userVector[i] = ratingMatrix[i][0];
