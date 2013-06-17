@@ -1,5 +1,14 @@
 #include "preprocess.h"
 
+using std::cin;
+using std::cout;
+using std::endl;
+using std::vector;
+using std::ifstream;
+using std::map;
+using std::ofstream;
+
+
 vector<vector<double> > getCosineMatrix(const vector<vector<double> >& ratingMatrix, map<long, int> userMap, vector<long> userVector)
 {
 	vector<vector<double> > cosineDistances;
@@ -16,8 +25,9 @@ vector<vector<double> > getCosineMatrix(const vector<vector<double> >& ratingMat
 		
 		// Calculate the cosine similarity with the randomly selected users		
 		for(int j = 0; j < NUM_FEATURES; j++)
+		{	
 			distance[j + 1]  = cosineSimilarity(vector<double>(ratingMatrix[i].begin() + 1, ratingMatrix[i].end()), vector<double>(ratingMatrix[userMap[userVector[j]]].begin() + 1, ratingMatrix[userMap[userVector[j]]].end()));
-
+		}
 		// Add the distance to the cosine Distance Matrix
 		cosineDistances.push_back(distance);
 	}

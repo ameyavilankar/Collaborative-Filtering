@@ -16,8 +16,7 @@ using std::ifstream;
 using std::map;
 using std::ofstream;
 
-
-inline void getUserMapAndVector(const std::vector<std::vector<double> >& ratingMatrix, std::map<long, int> userMap, std::vector<long> userVector)
+inline void getUserMapAndVector(const std::vector<std::vector<double> >& ratingMatrix, std::map<long, int>& userMap, std::vector<long>& userVector)
 {
 	for(int i = 0; i <ratingMatrix.size(); i++)
 	{
@@ -47,7 +46,7 @@ int main()
 	// Randomly shuffle the userVector
 	vector<long >::iterator newBegin = random_unique(userVector.begin(), userVector.end(), NUM_FEATURES);
 	
-	
+    
 	cout<<"Calculating and Processing the distance Matrix...\n";
 	// Calculate the cosine distances to the R randomly selected users
 	vector<vector<double> > cosineDistances = getCosineMatrix(ratingMatrix, userMap, userVector);
