@@ -243,7 +243,7 @@ void saveCheckMap(map<long, int>& userToClusterMap, map<long, int>& checkMap)
 	    outfile<<it->first<<"\t"<<it->second<<"\t"<<checkMap[it->first]<<endl;
 	}
 	
-	cout<<"Correct:"<<correct<<"/"<<userToClusterMap.size()<<"\n";
+	cout<<"Correct:"<<correct<<"/"<<userToClusterMap.size()<<"\n\n";
 	outfile.close();
 }
 
@@ -280,7 +280,7 @@ void saveJSONFiles(map<int, vector<long> >& clusterToUserMap, map<int, map<int, 
 		}
 	}
 
-	cout<<"LineCount Now: "<<lineCount<<endl;
+	cout<<"LineCount: "<<lineCount<<endl;
 	cout<<"LinkCount: "<<linkCount<<endl;
 	
 	// Add all the lines from one cluster to another
@@ -294,7 +294,7 @@ void saveJSONFiles(map<int, vector<long> >& clusterToUserMap, map<int, map<int, 
 		}
 	}
 	
-	cout<<"LinkCount: "<<linkCount<<endl;
+	cout<<"LinkCount at the end: "<<linkCount<<"\n\n";
 	
 	outfile1<<"\n]\n}";
 	outfile2<<"\n]\n}";
@@ -324,7 +324,12 @@ string concatenate(const string& one, int clusterNo, const string& two)
 	return sstm.str();
 }
 
-void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances)
+int calculateDistance(map<long, vector<double> >& ratingMatrix, long one, long two)
+{
+	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])) * 100);
+}
+
+void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances, map<long, vector<double> >& ratingMatrix)
 {
 	// define the constant strings
 	const string cluster = "cluster_";
@@ -346,31 +351,32 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 		//outfile1<<"{\"name\":\""<<clusterToUserMap.begin()->second[0]<<"\",\"group\":"<<clusterToUserMap.begin()->first<<"}";
 		
 		int lineCount = 0;
-		map<int, int> clusterLineMap;
+		map<long, int> userLineMap;
 		int linkCount = 0;
 
-		// Enter the cluster to the file
-		outfile1<<"{\"name\":\"c"<<it->first<<"\",\"group\":"<<it->first<<"},\n";
-		clusterLineMap[it->first] = lineCount++;
-	
 		for(int i = 0; i < it->second.size(); i++)
+		{
 			if(i == it->second.size() - 1)
-			{
 				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"}\n";
-				outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"}\n";
-				lineCount++;
-				linkCount++;				
-			}
 			else
-			{
 				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
-				outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"},\n";
-				lineCount++;
-				linkCount++;
-			}
 
-		cout<<"LineCount Now: "<<lineCount<<endl;
-		cout<<"LinkCount: "<<linkCount<<endl;
+			userLineMap[it->second[i]] = lineCount++;
+		}	
+
+		for(int i = 0; i < it->second.size() - 1; i++)
+			for(int j = i + 1; j < it->second.size(); j++)
+			{
+				if(i == it->second.size() - 2)
+					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"}\n";
+				else
+					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"}\n";
+
+				linkCount++;
+			}	
+		
+		cout<<"LineCount: "<<lineCount<<"\n";
+		cout<<"LinkCount: "<<linkCount<<"\n\n";
 		
 		outfile1<<"]\n}";
 		outfile2<<"]\n}";
