@@ -69,24 +69,3 @@ int main()
 	
 	return 0;
 }
-
-/*
-	TEST CODE FOR RANDOM UNIQUE
-	vector<double> values;
-	values.push_back(2);
-	values.push_back(3);
-	values.push_back(4);
-	values.push_back(5);
-	values.push_back(6);
-	values.push_back(7);
-
-	for(vector<double>::iterator it = values.begin(); it != values.end(); it++)
-		cout<<(*it)<<" ";
-	cout<<endl;
-
-	vector<double>::iterator newBegin = random_unique(values.begin(), values.end(), values.size() - 2);
-
-	for(vector<double>::iterator it = values.begin(); it != values.end(); it++)
-		cout<<(*it)<<" ";
-	cout<<endl;
-*/
