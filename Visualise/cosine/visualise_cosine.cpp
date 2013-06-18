@@ -4,9 +4,11 @@
 #include <iostream>
 #include <limits>
 #include <stdio.h>
+#include <stdlib.h>
 #include <algorithm>
-#include "visualise.h"
 #include <math.h>
+#include <sstream>
+#include "visualise.h"
 
 using std::map;
 using std::vector;
@@ -19,6 +21,7 @@ using std::ifstream;
 using std::ofstream;
 using std::min_element;
 using std::distance;
+using std::stringstream;
 
 // Used to get the map from the users to their assigned cluster
 int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, map<int, vector<long> >& clusterToUserMap)
@@ -259,7 +262,6 @@ void saveJSONFiles(map<int, vector<long> >& clusterToUserMap, map<int, map<int, 
 	//outfile1<<"{\"name\":\""<<clusterToUserMap.begin()->second[0]<<"\",\"group\":"<<clusterToUserMap.begin()->first<<"}";
 	
 	int lineCount = 0;
-	int clusterLine = 0;
 	map<int, int> clusterLineMap;
 	int linkCount = 0;
 
@@ -276,8 +278,6 @@ void saveJSONFiles(map<int, vector<long> >& clusterToUserMap, map<int, map<int, 
 			//lineCount++;
 			linkCount++;
 		}
-
-		//cout<<"Cluster No: "<<it->first<<" ClusterLine: "<<clusterLineMap[it->first]<<" No. of Users: "<<it->second.size()<<" LineCount Now: "<<lineCount<<endl;
 	}
 
 	cout<<"LineCount Now: "<<lineCount<<endl;
@@ -315,6 +315,73 @@ void saveClusterCenters(map<int, long>& clusterCenterUser)
 
 	outfile.close();
 }
+
+string concatenate(const string& one, int clusterNo, const string& two)
+{
+	// Create and concatenate using a stringstream
+	stringstream sstm;
+	sstm << one << clusterNo << two;
+	return sstm.str();
+}
+
+void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances)
+{
+	// define the constant strings
+	const string cluster = "cluster_";
+	const string nodes = ".nodes.json";
+	const string links = ".links.json";
+
+	for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
+	{
+		ofstream outfile1, outfile2;
+		outfile1.open(concatenate(cluster, it->first, nodes).c_str());
+		outfile2.open(concatenate(cluster, it->first, links).c_str());
+			
+		// save to file the first line of the file
+		outfile1<<"{\n\"nodes\":[\n";
+		outfile2<<"{\n\"links\":[\n";
+		
+		//print the first entry of the file
+		//outfile2<<"{\"source\":"
+		//outfile1<<"{\"name\":\""<<clusterToUserMap.begin()->second[0]<<"\",\"group\":"<<clusterToUserMap.begin()->first<<"}";
+		
+		int lineCount = 0;
+		map<int, int> clusterLineMap;
+		int linkCount = 0;
+
+		// Enter the cluster to the file
+		outfile1<<"{\"name\":\"c"<<it->first<<"\",\"group\":"<<it->first<<"},\n";
+		clusterLineMap[it->first] = lineCount++;
+	
+		for(int i = 0; i < it->second.size(); i++)
+		{
+			outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
+			outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"},\n";
+			lineCount++;
+			linkCount++;
+
+			if(i == it->second.size() - 1)
+			{
+				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
+				outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"}\n";
+				lineCount++;
+				linkCount++;				
+			}
+		}
+
+		cout<<"LineCount Now: "<<lineCount<<endl;
+		cout<<"LinkCount: "<<linkCount<<endl;
+		
+		outfile1<<"\n]\n}";
+		outfile2<<"\n]\n}";
+		
+		// Close the two writing files
+		outfile1.close();
+		outfile2.close();	
+	}	
+	
+}
+
 
 int main()
 {
@@ -371,6 +438,7 @@ int main()
 	saveCheckMap(userToClusterMap, checkMap);
 	saveJSONFiles(clusterToUserMap, clusterToClusterDistances, clusterUserDistances);
 	saveClusterCenters(clusterCenterUser);
+	saveClusters(clusterToUserMap, clusterUserDistances);
 
 	return 0;
 
