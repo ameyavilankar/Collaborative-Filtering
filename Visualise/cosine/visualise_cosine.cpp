@@ -370,7 +370,7 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 				if(i == it->second.size() - 2)
 					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"}\n";
 				else
-					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"}\n";
+					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"},\n";
 
 				linkCount++;
 			}	
@@ -441,10 +441,14 @@ int main()
 
 	// Save the checkMap, JSON files and cluster center users to the file
 	cout<<"Saving the results...\n";
+	cout<<"Saving the map...\n";
 	saveCheckMap(userToClusterMap, checkMap);
+	cout<<"Saving the cluster json file...\n";
 	saveJSONFiles(clusterToUserMap, clusterToClusterDistances, clusterUserDistances);
+	cout<<"Saving the cluster centers to the file...\n";
 	saveClusterCenters(clusterCenterUser);
-	saveClusters(clusterToUserMap, clusterUserDistances);
+	cout<<"Saving the individual clusters to the file...\n"; 
+	saveClusters(clusterToUserMap, clusterUserDistances, ratingMatrix);
 
 	return 0;
 
