@@ -304,19 +304,31 @@ void saveJSONFiles(map<int, vector<long> >& clusterToUserMap, map<int, map<int, 
 	outfile2.close();
 }
 
+void saveClusterCenters(map<int, long>& clusterCenterUser)
+{
+	ofstream outfile;
+	outfile.open("clusterCenters.txt");
+
+	cout<<"Number of Clusters: "<<clusterCenterUser.size()<<"\n";
+	for(map<int, long>::const_iterator it = clusterCenterUser.begin(); it != clusterCenterUser.end(); it++)
+		outfile<<it->second<<"\n";
+
+	outfile.close();
+}
 
 int main()
 {
 	// STEP 1: Read the clusters from the data.txt file and 
 	// Create a map from every user to its cluster number 
+	cout<<"Geting the userToClusterMap and the clusterToUserMap...\n";
 	map<long, int> userToClusterMap;
 	map<int, vector<long> > clusterToUserMap;
-
 	int errorVal = getUserToClusterMap("data.txt", userToClusterMap, clusterToUserMap);
 	if(errorVal != 0)
 		return errorVal;
-	cout<<"No. of users: "<<userToClusterMap.size()<<endl;
-	cout<<"No. of Clusters:"<<clusterToUserMap.size()<<endl;
+	cout<<"No. of users: "<<userToClusterMap.size()<<"\n";
+	cout<<"No. of Clusters:"<<clusterToUserMap.size()<<"\n\n";
+	
 	
 	/*
 	// STEP 2: Read the cluster centers from the "cluster.txt" file
@@ -327,15 +339,18 @@ int main()
 	cout<<"Cluster Dimensions: "<<clusterCentersRDim.size()<<", "<<clusterCentersRDim[0].size()<<endl;
 	*/
 
+	
 	// STEP 3: Read the ratingMatrix to get the user vectors
+	cout<<"Geting the ratingMatrix...\n";
 	map<long, vector<double> > ratingMatrix;
 	errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
 	if(errorVal != 0)
 		return errorVal;
+	cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[1].size()<<"\n\n";
 
-	cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[1].size()<<endl;
 
 	// Come up with the cluster centers, distances of users to their cluster centers, and the user who is at the center of each cluster
+	cout<<"Calculating the cluster centers...\n";
 	map<int, map<long, int> > clusterUserDistances;
 	map<int, vector<double> > clusterCenters;
 	map<int, long> clusterCenterUser;
@@ -343,60 +358,68 @@ int main()
 	
 	// STEP 4: Calculate the CANBERRA distance of every user to the all the clusters and
 	// find the cluster no. corresponding to the minimum distance
+	cout<<"Calculating the checkMap...\n";
 	map<long, int> checkMap = getCheckMap(ratingMatrix, clusterCenters);
 	
-	
-	/*
-	vector<vector<double> > ratingArray;
-	for(map<long, vector<double> >::const_iterator rating_iter = ratingMatrix.begin(); rating_iter != ratingMatrix.end(); rating_iter++)
-		ratingArray.push_back(rating_iter->second);
-	
-	cout<<"Rating Array Dimensions:"<<ratingArray.size()<<", "<<ratingArray[0].size()<<endl;
-
-	vector<vector<double> > clusterArray;
-	for(map<int, vector<double> >::const_iterator cluster_iter = clusterCenters.begin(); cluster_iter != clusterCenters.end(); cluster_iter++)
-		clusterArray.push_back(cluster_iter->second);
-
-
-	for(int i = 0; i < ratingArray.size(); i++)
-	{
-		// Use only if want to see al the distaces
-		//This will hold the Canberra distances for the current user
-		//vector<double> distance(clusterCenters.size());
-
-		cout<<"Calculating Cluster Assignment for user: "<<(i + 1)<<endl;
-
-		double minValue = std::numeric_limits<double>::max();
-		double currentDistance = 0.0;
-		int minIndex = 0;
-
-		for(int j = 0; j < clusterArray.size(); j++)
-		{
-			cout<<(j + 1)<<" ";
-
-			// Calculate the canberra distance
-			currentDistance = calculate_canberradist(ratingArray[i], clusterArray[j]);
-
-			if(currentDistance < minValue)
-			{
-				minValue = currentDistance;
-				minIndex = j + 1;
-			}
-		}
-
-		cout<<endl;
-
-		// Set the cluster for the corresponding user
-		checkMap[i + 1] = minIndex;		
-	}
-	*/
 
 	// Develop the distance matrix from one cluster to another
+	cout<<"Calculating the cluster to cluster center distances...\n";
 	map<int, map<int, int> > clusterToClusterDistances = calculateClusterToClusterDistances(clusterCenters);
 
-	// Save the checkMap to the file
+	// Save the checkMap, JSON files and cluster center users to the file
+	cout<<"Saving the results...\n";
+	saveCheckMap(userToClusterMap, checkMap);
 	saveJSONFiles(clusterToUserMap, clusterToClusterDistances, clusterUserDistances);
-    
+	saveClusterCenters(clusterCenterUser);
+
 	return 0;
 
 }
+
+	
+/*
+OLD CODE FROM MAIN:
+vector<vector<double> > ratingArray;
+for(map<long, vector<double> >::const_iterator rating_iter = ratingMatrix.begin(); rating_iter != ratingMatrix.end(); rating_iter++)
+	ratingArray.push_back(rating_iter->second);
+
+cout<<"Rating Array Dimensions:"<<ratingArray.size()<<", "<<ratingArray[0].size()<<endl;
+
+vector<vector<double> > clusterArray;
+for(map<int, vector<double> >::const_iterator cluster_iter = clusterCenters.begin(); cluster_iter != clusterCenters.end(); cluster_iter++)
+	clusterArray.push_back(cluster_iter->second);
+
+
+for(int i = 0; i < ratingArray.size(); i++)
+{
+	// Use only if want to see al the distaces
+	//This will hold the Canberra distances for the current user
+	//vector<double> distance(clusterCenters.size());
+
+	cout<<"Calculating Cluster Assignment for user: "<<(i + 1)<<endl;
+
+	double minValue = std::numeric_limits<double>::max();
+	double currentDistance = 0.0;
+	int minIndex = 0;
+
+	for(int j = 0; j < clusterArray.size(); j++)
+	{
+		cout<<(j + 1)<<" ";
+
+		// Calculate the canberra distance
+		currentDistance = calculate_canberradist(ratingArray[i], clusterArray[j]);
+
+		if(currentDistance < minValue)
+		{
+			minValue = currentDistance;
+			minIndex = j + 1;
+		}
+	}
+
+	cout<<endl;
+
+	// Set the cluster for the corresponding user
+	checkMap[i + 1] = minIndex;		
+}
+*/
+
