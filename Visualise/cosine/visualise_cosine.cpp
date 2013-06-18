@@ -158,8 +158,8 @@ void calculateClusterCenters(map<int, vector<long> >& clusterToUserMap, map<long
 		}
 	}
 	
-	cout<<"Number of Clusters:"<<clusterCenters.size()<<endl;
-	cout<<"Number of Users: "<<numberOfUsers<<endl;
+	cout<<"Number of Clusters:"<<clusterCenters.size()<<"\n";
+	cout<<"Number of Users: "<<numberOfUsers<<"\n\n";
 
 }
 
@@ -220,7 +220,7 @@ map<int, map<int, int> > calculateClusterToClusterDistances(map<int, vector<doub
 		}
 	}
 	
-	cout<<"ClusterDistanceMatrixDimenstions: "<<clusterToClusterDistances.size()<<" , "<<clusterToClusterDistances.begin()->second.size()<<endl;
+	cout<<"ClusterDistanceMatrixDimenstions: "<<clusterToClusterDistances.size()<<" , "<<clusterToClusterDistances.begin()->second.size()<<"\n\n";
 	
 	return clusterToClusterDistances;
 }
@@ -354,26 +354,26 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 		clusterLineMap[it->first] = lineCount++;
 	
 		for(int i = 0; i < it->second.size(); i++)
-		{
-			outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
-			outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"},\n";
-			lineCount++;
-			linkCount++;
-
 			if(i == it->second.size() - 1)
 			{
-				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
+				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"}\n";
 				outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"}\n";
 				lineCount++;
 				linkCount++;				
 			}
-		}
+			else
+			{
+				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
+				outfile2<<"{\"source\":"<<clusterLineMap[it->first]<<",\"target\":"<<lineCount<<",\"value\":"<<clusterUserDistances[it->first][it->second[i]]<<"},\n";
+				lineCount++;
+				linkCount++;
+			}
 
 		cout<<"LineCount Now: "<<lineCount<<endl;
 		cout<<"LinkCount: "<<linkCount<<endl;
 		
-		outfile1<<"\n]\n}";
-		outfile2<<"\n]\n}";
+		outfile1<<"]\n}";
+		outfile2<<"]\n}";
 		
 		// Close the two writing files
 		outfile1.close();
@@ -425,7 +425,7 @@ int main()
 	
 	// STEP 4: Calculate the CANBERRA distance of every user to the all the clusters and
 	// find the cluster no. corresponding to the minimum distance
-	cout<<"Calculating the checkMap...\n";
+	cout<<"Calculating the checkMap...\n\n";
 	map<long, int> checkMap = getCheckMap(ratingMatrix, clusterCenters);
 	
 
