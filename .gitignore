@@ -11,3 +11,7 @@
 *.lai
 *.la
 *.a
+
+#.dat files and .txt files
+.dat
+.txt
