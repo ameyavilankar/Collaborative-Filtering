@@ -25,6 +25,64 @@ inline void getUserMapAndVector(const std::vector<std::vector<double> >& ratingM
 	}
 }
 
+inline int readClusterCenterUsers(map<long, int>& clusterUsers, string filename)
+{
+	ifstream myfile(filename.c_str());						 // Open the file for getting the input
+    std::string currentLine;						 // To hold the entire currentline
+    std::vector<double> splitDouble;				 // To hold the double values from the currentline
+
+    //Always test the file open.
+    if(!myfile) 
+    {
+		cout<<"Error opening output file"<<endl;
+		return -1;
+	}
+	
+	// Read till the end of the file
+	while (std::getline (myfile, currentLine)) 
+    {
+    	// Split the currentLine and only return the double parts
+ 		splitDouble = split(currentLine);
+			
+		// add user to the cluster
+		clusterUsers[splitDouble[1]] = splitDouble[0];
+    }
+
+    cout<<"Number of users selected from old cluster centers: "<<clusterUsers.size()<<"\n";
+
+    return 0;
+}
+
+// Selects the cluster centers users to be among the R users and selects the remaining users randomly
+void getRandomAndClusterUsers(vector<long>& userVector, map<long, int> clusterUsers)
+{
+	int count = 0;
+	long temp  = 0;
+
+	for(int i = 0; i < userVector.size(); i++)
+	{
+		// search for the user present in the cluster centers and move it to the front of the list
+		if(clusterUsers.find(userVector[i]) != clusterUsers.end())
+		{
+			if(i == count)
+			{	
+				// swap the two
+				temp = userVector[count];
+				userVector[count] = userVector[i];
+				userVector[i] = temp;
+			}
+
+			count++;
+		}
+	}
+
+	cout<<"Count: "<<count<<" , ClusterUsers: "<<clusterUsers.size()<<"\n";
+
+	// Randomly select the remaining number of users
+	vector<long >::iterator newBegin = random_unique(userVector.begin() + count, userVector.end(), NUM_FEATURES - count);
+
+	userVector.resize(NUM_FEATURES);
+}
 
 int main()
 {
@@ -43,10 +101,27 @@ int main()
 	vector<long> userVector(ratingMatrix.size());
 	getUserMapAndVector(ratingMatrix, userMap, userVector);
 	
+	cout<<"Reading the clusterUsers...\n";
+	map<long, int> clusterUsers;
+	errorVal = readClusterCenterUsers(clusterUsers, "clusterUsers.txt");
+	if(errorVal != 0)
+		return errorVal;
+
+	cout<<"Before shuffling top NUM_FEATURES: \n";
+	for(int i = 0; i < NUM_FEATURES; i++)
+		cout<<userVector[i]<<" ";
+	cout<<endl;
+
 	// Randomly shuffle the userVector
-	vector<long >::iterator newBegin = random_unique(userVector.begin(), userVector.end(), NUM_FEATURES);
+	getRandomAndClusterUsers(userVector, clusterUsers);
 	
-    
+	cout<<"After shuffling top NUM_FEATURES: \n";
+	for(int i = 0; i < NUM_FEATURES; i++)
+		cout<<userVector[i]<<" ";
+	cout<<endl;	
+
+	cout<<"userVector.size(): "<<userVector.size()<<" , NUM_FEATURES: "<<NUM_FEATURES<<"\n";
+
 	cout<<"Calculating and Processing the distance Matrix...\n";
 	// Calculate the cosine distances to the R randomly selected users
 	vector<vector<double> > cosineDistances = getCosineMatrix(ratingMatrix, userMap, userVector);
