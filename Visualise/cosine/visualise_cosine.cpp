@@ -311,7 +311,7 @@ void saveClusterCenters(map<int, long>& clusterCenterUser)
 
 	cout<<"Number of Clusters: "<<clusterCenterUser.size()<<"\n";
 	for(map<int, long>::const_iterator it = clusterCenterUser.begin(); it != clusterCenterUser.end(); it++)
-		outfile<<it->second<<"\n";
+		outfile<<it->first<<" "<<it->second<<"\n";
 
 	outfile.close();
 }
@@ -329,7 +329,7 @@ int calculateDistance(map<long, vector<double> >& ratingMatrix, long one, long t
 	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])) * 100);
 }
 
-void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances, map<long, vector<double> >& ratingMatrix)
+void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances, map<long, vector<double> >& ratingMatrix, map<int, long>& clusterCenterUser)
 {
 	// define the constant strings
 	const string cluster = "cluster_";
@@ -353,14 +353,22 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 		int lineCount = 0;
 		map<long, int> userLineMap;
 		int linkCount = 0;
+		int group = 0;
 
 		for(int i = 0; i < it->second.size(); i++)
 		{
-			if(i == it->second.size() - 1)
-				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"}\n";
+			// Change color of the cluster center
+			if(clusterCenterUser.find(it->second[i]) != clusterCenterUser.end())
+				group = it->first + 1;
 			else
-				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<it->first<<"},\n";
+				group = it->first;
 
+			if(i == it->second.size() - 1)
+				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<group<<"}\n";
+			else
+				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<group<<"},\n";
+
+			// save the lineCount for the links.json file
 			userLineMap[it->second[i]] = lineCount++;
 		}	
 
@@ -448,7 +456,7 @@ int main()
 	cout<<"Saving the cluster centers to the file...\n";
 	saveClusterCenters(clusterCenterUser);
 	cout<<"Saving the individual clusters to the file...\n"; 
-	saveClusters(clusterToUserMap, clusterUserDistances, ratingMatrix);
+	saveClusters(clusterToUserMap, clusterUserDistances, ratingMatrix, clusterCenterUser);
 
 	return 0;
 
