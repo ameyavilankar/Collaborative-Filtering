@@ -135,7 +135,9 @@ int main()
 	int errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
 	cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
 	
-	
+	for(int i = 0 ; i < ratingMatrix[101].size(); i++)
+	    cout<<ratingMatrix[101][i]<<" ";
+	cout<<endl;
 	
 	cout<<"Calculating the userMap and the userVector...\n";
 	// Get the userMap and the userVector
@@ -155,14 +157,19 @@ int main()
 	cout<<"No. of Clusters:"<<clusterToUserMap.size()<<"\n\n";
 	
 
-
-    cout<<"Calculating the ratingMatrix and vector for Cluster 1...\n";
+	
+	cout<<"Calculating the ratingMatrix and vector for Cluster 1...\n";
 	vector<vector<double> > clusterRatingMatrix;
 	for(int i = 0; i < clusterToUserMap[1].size(); i++)
 		clusterRatingMatrix.push_back(ratingMatrix[userMap[clusterToUserMap[1][i]]]);
 	cout<<"clusterRatingMatrix size: "<<clusterRatingMatrix.size()<<"\n";
 
+	for(int i = 0; i < clusterRatingMatrix.size(); i++)
+	    cout<<clusterRatingMatrix[i][0]<<" "<<clusterToUserMap[1][i]<<"\n";
+	cout<<endl;
 
+	
+	
 	cout<<"Calculating and Processing the distance Matrix...\n";
 	// Calculate the cosine distances to the R randomly selected users
 	vector<vector<double> > cosineDistances;
