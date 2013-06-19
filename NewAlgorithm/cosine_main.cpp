@@ -64,15 +64,13 @@ void getRandomAndClusterUsers(vector<long>& userVector, map<long, int> clusterUs
 		// search for the user present in the cluster centers and move it to the front of the list
 		if(clusterUsers.find(userVector[i]) != clusterUsers.end())
 		{
-			if(i == count)
-			{	
-				// swap the two
-				temp = userVector[count];
-				userVector[count] = userVector[i];
-				userVector[i] = temp;
-			}
+		    cout<<"Match: "<<userVector[i]<<"\n";
 
-			count++;
+		    // swap the two
+		    temp = userVector[count];
+		    userVector[count] = userVector[i];
+		    userVector[i] = temp;
+		    count++;
 		}
 	}
 
@@ -107,7 +105,7 @@ int main()
 	if(errorVal != 0)
 		return errorVal;
 
-	cout<<"Before shuffling top NUM_FEATURES: \n";
+    	cout<<"Before shuffling top NUM_FEATURES: \n";
 	for(int i = 0; i < NUM_FEATURES; i++)
 		cout<<userVector[i]<<" ";
 	cout<<endl;

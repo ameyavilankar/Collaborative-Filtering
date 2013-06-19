@@ -154,7 +154,7 @@ void calculateClusterCenters(map<int, vector<long> >& clusterToUserMap, map<long
 
 		for(int i = 0; i < it->second.size(); i++)
 		{
-		    clusterUserDistances[it->first][it->second[i]] = (int)(exp(-cosineSimilarity(ratingMatrix[it->second[i]], currentCenter)) * 100);
+		    clusterUserDistances[it->first][it->second[i]] = (int)(exp(-cosineSimilarity(ratingMatrix[it->second[i]], currentCenter)) * 1000);
 		}
 	}
 	
@@ -214,7 +214,7 @@ map<int, map<int, int> > calculateClusterToClusterDistances(map<int, vector<doub
 		{
 			count++;
 			//cout<<"Calculating: "<<it->first<<" "<<second_it->first<<endl<<" "<<count<<endl;
-			int distance = (int)(exp(-cosineSimilarity(it->second, second_it->second)) * 100);
+			int distance = (int)(exp(-cosineSimilarity(it->second, second_it->second)) * 1000);
 			clusterToClusterDistances[it->first][second_it->first] = distance;
 			second_it++;
 		}
@@ -269,6 +269,7 @@ void saveJSONFiles(map<int, vector<long> >& clusterToUserMap, map<int, map<int, 
 	{
 		// Enter the cluster to the file
 		outfile1<<"{\"name\":\"c"<<it->first<<"\",\"group\":"<<it->first<<"},\n";
+
 		clusterLineMap[it->first] = lineCount++;
 	
 		for(int i = 0; i < it->second.size(); i++)
@@ -326,7 +327,7 @@ string concatenate(const string& one, int clusterNo, const string& two)
 
 int calculateDistance(map<long, vector<double> >& ratingMatrix, long one, long two)
 {
-	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])) * 100);
+	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])) * 1000);
 }
 
 void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances, map<long, vector<double> >& ratingMatrix, map<int, long>& clusterCenterUser)
