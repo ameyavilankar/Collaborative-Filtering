@@ -12,6 +12,33 @@ double euclidean(const std::vector<double>& one, const std::vector<double>& two)
 	return sum;
 }
 
+// Finds the common rated entries and calls euclidean distance
+double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two)
+{
+	std::vector<double> oneCommon;
+	std::vector<double> twoCommon;
+	
+	for(int i = 0; i < one.size(); i++)
+		if(one[i] != 0 && two[i] != 0)
+		{
+			oneCommon.push_back(one[i]);
+			twoCommon.push_back(two[i]);
+		}
+	
+	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
+	
+	return euclidean(oneCommon, twoCommon);
+}
+
+//Calculate the similarity measure
+double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector<double>& two)
+{
+	return (1.0/(1.0 + calcEuclidean(one, two)));
+}
+
+
+
+
 // used to calculate the mean of the vector
 double mean(const std::vector<double> one)
 {
@@ -77,32 +104,16 @@ double calcPearson(const std::vector<double>& one, const std::vector<double>& tw
 	return pearsonCoefficient(oneCommon, twoCommon);
 }
 
-// Finds the common rated entries and calls euclidean distance
-double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two)
-{
-	std::vector<double> oneCommon;
-	std::vector<double> twoCommon;
-	
-	for(int i = 0; i < one.size(); i++)
-		if(one[i] != 0 && two[i] != 0)
-		{
-			oneCommon.push_back(one[i]);
-			twoCommon.push_back(two[i]);
-		}
-	
-	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
-	
-	return euclidean(oneCommon, twoCommon);
-}
 
-//Calculate the similarity measure
-double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector<double>& two)
-{
-	return (1.0/(1.0 + calcEuclidean(one, two)));
-}
+
 
 // calculates the cosine similarity between two vectors
 double consineDistance(const std::vector<double>& one, const std::vector<double>& two)
+{
+	return 1 - cosineSimilarity(one, two);
+}
+
+double cosineSimilarity(const std::vector<double> one, const std::vector<double> two)
 {
 	assert(one.size() == two.size());
 	
@@ -120,10 +131,62 @@ double consineDistance(const std::vector<double>& one, const std::vector<double>
 	double denominator = sqrt(oneSqrSum * twoSqrSum);
 	
 	if(denominator == 0)
+		return 0.0;
+	else
+		return prodSum/denominator;
+}
+
+double calcAdjustedCosineSimilarity(const std::vector<double>& one, const std::vector<double>& two, const std::vector<double>& average)
+{
+	assert(one.size() == two.size() && one.size() == average.size());
+
+	std::vector<double> oneCommon;
+	std::vector<double> twoCommon;
+	std::vector<double> averageCommon;
+
+	for(int i = 0; i < one.size();i++)
+		if(one[i] != 0 && two[i] != 0)
+		{
+			oneCommon.push_back(one[i]);
+			twoCommon.push_back(two[i]);
+			averageCommon.push_back(average[i]);
+		}
+	
+	//std::cout<<"oneCommon: "<<oneCommon.size()<<" , TwoCommon: "<<twoCommon.size()<<std::endl;
+	
+	return adjustedCosineSimilarity(oneCommon, twoCommon, averageCommon);
+}
+
+// calculates the cosine similarity between two vectors
+double adjustedCosineSimilarity(const std::vector<double>& one, const std::vector<double>& two, const std::vector<double>& average)
+{
+	assert(one.size() == two.size() && one.size() == average.size());
+	
+	double oneSqrSum = 0.0;
+	double twoSqrSum = 0.0;
+	double prodSum = 0.0;
+	double oneDiff = 0.0;
+	double twoDiff = 0.0;
+
+	for(int i = 0; i < one.size(); i++)
+	{
+		oneDiff = (one[i] - average[i]);
+		twoDiff = (two[i] - average[i]);
+
+		prodSum += oneDiff * twoDiff;
+		oneSqrSum += oneDiff * oneDiff;
+		twoSqrSum += twoDiff * twoDiff;
+  	}
+	
+	double denominator = sqrt(oneSqrSum * twoSqrSum);
+	
+	if(denominator == 0)
 		return 1.0;
 	else
 		return 1.0 - prodSum/denominator;
 }
+
+
 
 // calculates the jaccardDistance between the two vectors
 double jaccardDistance(const std::vector<double>& one, const std::vector<double>& two)

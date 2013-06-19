@@ -35,8 +35,11 @@ int main()
 	cout<<"Transforming the map...";
 	map<string, map<long, double> >movieToUser = transformPrefs(userToMovie);
 	
+	cout<<"Calculating the average rating for each user...\n";
+	map<long, double> averageRatings = getAverageRatings(userToMovie);
+
 	cout<<"Calculating the top similar Movies for each movie...\n";
-	map<string, vector<pair<string, double> > > topSimilarMovies = calculateSimilarMovies(movieToUser);
+	map<string, vector<pair<string, double> > > topSimilarMovies = calculateSimilarMovies(movieToUser, averageRatings);
 	
 	cout<<"Calculating the recommendations for each user...\n";
 	map<long, vector<pair<string, double> > > recommendedItemsItemBased = getRecommendationsItemBased(userToMovie, topSimilarMovies);

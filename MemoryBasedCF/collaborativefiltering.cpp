@@ -155,29 +155,30 @@ vector<pair<long, double> > topMatchesUsers(map<long, map<string, double> >& use
 }
 
 
-vector<pair<string, double> > topMatchesMovies(map<string, map<long, double> >& movieToUser, string movie, int n)
+vector<pair<string, double> > topMatchesMovies(map<string, map<long, double> >& movieToUser, const string& movie, map<long, double>& averageRatings, int n)
 {
-	// To hold the users and the similarity scores
+	// To hold the movies and the similarity scores
 	vector<pair<string, double> > scores;
 
-	// Used for holding the common movies to cacluate the similarity scores
-	vector<double> one, two;
+	// Used for holding the common users to cacluate the similarity scores
+	vector<double> one, two, user_avg;
 	double score = 0.0;
 
-	// Go through all other users except for the user
+	// Go through all other movies except for the current movie
 	for(map<string, map<long, double> >::const_iterator movie_iter = movieToUser.begin(); movie_iter != movieToUser.end(); movie_iter++)
 		if(movie_iter->first != movie)
 		{
 			for(map<long, double>::const_iterator user_iter = movie_iter->second.begin(); user_iter != movie_iter->second.end(); user_iter++)
 				if(movieToUser[movie].find(user_iter->first) != movieToUser[movie].end())
 				{
-					//Found Common Movie
+					//Found Common user who rated both the movies
 					one.push_back(movieToUser[movie][user_iter->first]);
 					two.push_back(user_iter->second);
+					user_avg.push_back(averageRatings[user_iter->first]);
 				}
 
 			// Calculate the similarity score and add it to the vector
-			score = pearsonCoefficient(one, two);
+			score = adjustedCosineSimilarity(one, two, user_avg);
 			scores.push_back(make_pair<string, double>(movie_iter->first, score));
 		}
 
@@ -369,7 +370,7 @@ map<long, vector<pair<long, double> > > calculateSimilarUsers(map<long, map<stri
 
 
 
-map<string, vector<pair<string, double> > > calculateSimilarMovies(map<string, map<long, double> >& movieToUser, int n)
+map<string, vector<pair<string, double> > > calculateSimilarMovies(map<string, map<long, double> >& movieToUser, map<long, double>& averageRatings, int n)
 {
 	map<string, vector<pair<string, double> > > similarMovies;
 
@@ -380,41 +381,25 @@ map<string, vector<pair<string, double> > > calculateSimilarMovies(map<string, m
 		if(count % 100 == 0)
 			cout<<"("<<count<<",\t"<<movieToUser.size()<<")"<<endl;
 
-		
-		similarMovies[movie_iter->first] = topMatchesMovies(movieToUser, movie_iter->first);
+		similarMovies[movie_iter->first] = topMatchesMovies(movieToUser, movie_iter->first, averageRatings);
 	}
 
 	return similarMovies;
 }
 
-/*
 
-def getRecommendedItems(prefs, itemMatch, user):
-	userRatings = prefs[user]
-	scores = {}
-	totalSim = {}
+map<long, double> getAverageRatings(map<long, map<string, double> >& userToMovie)
+{
+	map<long, double> averageRatings;
 
-	# Loop over items rated by this user
-	for (item, rating) in userRatings.items():
-		# Loop over items similar to this one
-		for (similarity, item2) in itemMatch[item]:
-			# Ignore if this user has already rated this item
-			if item2 in userRatings:
-				continue
-			
-			# Weighted sum of rating times similarity
-			scores.setdefault(item2, 0)
-			scores[item2] += similarity * rating
-			
-			# Sum of all the similarities
-			totalSim.setdefault(item2, 0)
-			totalSim[item2] += similarity
+	for(map<long, map<string, double> >::const_iterator it = userToMovie.begin(); it != userToMovie.end(); it++)
+	{
+		for(map<string, double>::const_iterator movie_iter = it->second.begin(); movie_iter != it->second.end(); movie_iter++)
+			averageRatings[it->first] += movie_iter->second;
 
-	# Divide each total score by total weighting to get an average
-	rankings=[(score/totalSim[item],item) for item,score in scores.items()]
-	
-	# Return the rankings from highest to lowest
-	rankings.sort()
-	rankings.reverse()
-	return rankings
-*/
+		averageRatings[it->first] /= it->second.size();
+	}
+
+	return averageRatings;
+}
+

@@ -39,6 +39,15 @@ double findCommon(const std::vector<double>& one, const std::vector<double>& two
 // used to calculate the euclidean distance between two vectors
 double euclidean(const std::vector<double>& one, const std::vector<double>& two);
 
+// Finds the common rated entries and calls euclidean distance
+double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two);
+
+// Calculate the similarity measure
+double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector<double>& two);
+
+
+
+
 // used to calculate the mean of the vector
 double mean(const std::vector<double> one);
 
@@ -48,14 +57,22 @@ double pearsonCoefficient(const std::vector<double>& one, const std::vector<doub
 // Finds the common rated entries and calls pearson coefficient
 double calcPearson(const std::vector<double>& one, const std::vector<double>& two);
 
-// Finds the common rated entries and calls euclidean distance
-double calcEuclidean(const std::vector<double>& one, const std::vector<double>& two);
 
-// Calculate the similarity measure
-double calcEuclideanSimilarity(const std::vector<double>& one, const std::vector<double>& two);
 
-// calculates the cosine similarity between two vectors
+
+// calculates the cosine distance between two vectors
 double consineDistance(const std::vector<double>& one, const std::vector<double>& two);
+
+// caclulates the cosine similarity between the two vectors
+double cosineSimilarity(const std::vector<double> one, const std::vector<double> two);
+
+// calculates the cosine similarity adjusted by the average of the users
+double adjustedCosineSimilarity(const std::vector<double>& one, const std::vector<double>& two, const std::vector<double>& average);
+
+// find common and then call adjusted cosine similarity
+double calcAdjustedCosineSimilarity(const std::vector<double>& one, const std::vector<double>& two, const std::vector<double>& average);
+
+
 
 // calculates the jaccardDistance between the two vectors
 double jaccardDistance(const std::vector<double>& one, const std::vector<double>& two);
