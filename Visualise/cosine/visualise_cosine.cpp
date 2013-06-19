@@ -317,14 +317,6 @@ void saveClusterCenters(map<int, long>& clusterCenterUser)
 	outfile.close();
 }
 
-string concatenate(const string& one, int clusterNo, const string& two)
-{
-	// Create and concatenate using a stringstream
-	stringstream sstm;
-	sstm << one << clusterNo << two;
-	return sstm.str();
-}
-
 int calculateDistance(map<long, vector<double> >& ratingMatrix, long one, long two)
 {
 	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])) * 1000);
@@ -340,8 +332,8 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 	for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
 	{
 		ofstream outfile1, outfile2;
-		outfile1.open(concatenate(cluster, it->first, nodes).c_str());
-		outfile2.open(concatenate(cluster, it->first, links).c_str());
+		outfile1.open((cluster + to_string(it->first) +  nodes).c_str());
+		outfile2.open((cluster + to_string(it->first) +  links).c_str());
 			
 		// save to file the first line of the file
 		outfile1<<"{\n\"nodes\":[\n";
@@ -355,19 +347,27 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 		map<long, int> userLineMap;
 		int linkCount = 0;
 		int group = 0;
+		string name;
 
 		for(int i = 0; i < it->second.size(); i++)
 		{
 			// Change color of the cluster center
-			if(clusterCenterUser.find(it->second[i]) != clusterCenterUser.end())
+			if(clusterCenterUser[it->first] == it->second[i])
+			{
+				cout<<it->second[i]<<"\n";
 				group = it->first + 1;
+				name = "c" + to_string(it->second[i]);
+			}
 			else
-				group = it->first;
+			{
+			    name = to_string(it->second[i]);
+			    group = it->first;
+			}
 
 			if(i == it->second.size() - 1)
-				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<group<<"}\n";
+				outfile1<<"{\"name\":\""<<name<<"\",\"group\":"<<group<<"}\n";
 			else
-				outfile1<<"{\"name\":\""<<it->second[i]<<"\",\"group\":"<<group<<"},\n";
+				outfile1<<"{\"name\":\""<<name<<"\",\"group\":"<<group<<"},\n";
 
 			// save the lineCount for the links.json file
 			userLineMap[it->second[i]] = lineCount++;

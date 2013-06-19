@@ -8,6 +8,7 @@
 #include <math.h>
 #include <assert.h>
 #include <fstream>
+#include <sstream>
 
 using std::sort;
 using std::map;
@@ -21,6 +22,13 @@ using std::ifstream;
 using std::ofstream;
 using std::min_element;
 using std::distance;
+
+template<class T> string to_string(T n)
+{
+    std::ostringstream os;
+    os << n;
+    return os.str();
+}
 
 double pearsonCoefficient(const std::vector<double>&, const std::vector<double>&);
 double euclidean(const std::vector<double>&, const std::vector<double>&);
