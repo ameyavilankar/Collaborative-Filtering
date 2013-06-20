@@ -39,7 +39,7 @@ namespace PipeFish
 
 
 	    inline std::vector<Movie> getRecommendedMovies() { return recommendedMovies; }
-	    inline void setRecommendedMovies(std::vector<Movie> movies) { recommendedMovies = movie; }
+	    inline void setRecommendedMovies(std::vector<Movie> movies) { recommendedMovies = movies; }
 
 	    // Adds a new Movie that is rated by the user
 	    inline void addMovie(const Movie& newMovie, double rating = 3.0);

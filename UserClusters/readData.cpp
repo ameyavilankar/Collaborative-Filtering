@@ -14,12 +14,8 @@ using std::ifstream;
 using std::ofstream;
 using std::min_element;
 using std::distance;
+using PipeFish::Movie;
 
-// Function used to determine if the current character is a colon or not
-inline bool isSpace(char c)
-{
-	return iswspace(c);
-}
 
 // Convert the string to its double equivalent
 inline double getDouble(std::string toConvert)
@@ -28,7 +24,7 @@ inline double getDouble(std::string toConvert)
 }
 
 // Funciton used to split the sentence into its individual parts
-vector<double> split(const string& s)
+vector<double> split(const string& s, skip isSkip)
 {
 	vector<string> returnString;
 
@@ -40,13 +36,13 @@ vector<double> split(const string& s)
 	{
 		// ignore leading blanks
 		// invariant: characters in range `['original `i', current `i)' are all spaces
-		while (i != s.size() && isSpace(s[i]))
+		while (i != s.size() && isSkip(s[i]))
 			++i;
 
 		// find end of next word
 		string_size j = i;
 		// invariant: none of the characters in range `['original `j', current `j)' is a space
-		while (j != s.size() && !isSpace(s[j]))
+		while (j != s.size() && !isSkip(s[j]))
 			++j;
 
 		// if we found some nonwhitespace characters
@@ -71,7 +67,7 @@ vector<double> split(const string& s)
 }
 
 // Returns the vector matrix, and two maps that map from user_id to row and movie_id to column of the rating matrix
-vector<vector<double> > getRatingMatrix(const char* filename, map<long, int>& userMap, map<long, int>& movieMap)
+int getRatingMatrix(const char* filename, map<long, int>& userMap, map<long, int>& movieMap, vector<vector<double> >& ratingMatrix)
 {
 	// To hold the entire currentline
 	std::string currentLine;
@@ -87,7 +83,7 @@ vector<vector<double> > getRatingMatrix(const char* filename, map<long, int>& us
 	    if(!myfile) 
 	    {
 	      cout<<"Error opening output file"<<endl;
-	      return vector<vector<double> >();
+	      return -1;
 	    }
 		
 		// To hold the entire currentline
@@ -103,7 +99,7 @@ vector<vector<double> > getRatingMatrix(const char* filename, map<long, int>& us
 	    {
 			//cout<<count<<endl;
 	    	// Split the currentLine and only return the double parts
-	 		splitDouble = split(currentLine);
+	 		splitDouble = split(currentLine, isSpace);
 			
 			// Create a map from user_id to index the rating matrix
 			if(userMap.find(splitDouble[0]) == userMap.end())
@@ -151,13 +147,13 @@ vector<vector<double> > getRatingMatrix(const char* filename, map<long, int>& us
     ifstream myfile(filename);
     
     // The rating Matrix that will hold all the rating Data with the zeros
-	vector<vector<double> > ratingMatrix(userMap.size(), vector<double>(movieMap.size()));
+	ratingMatrix = vector<vector<double> >(userMap.size(), vector<double>(movieMap.size()));
 
     //Always test the file open.
     if(!myfile) 
     {
      	cout<<"Error opening output file"<<endl;
-    	return vector<vector<double> >();
+    	return -1;
     }
 
    	cout<<"Before Loading Matrix:"<<endl;
@@ -168,7 +164,7 @@ vector<vector<double> > getRatingMatrix(const char* filename, map<long, int>& us
 		//cout<<count<<endl;
 		count++;
     	// Split the currentLine and only return the double parts
- 		splitDouble = split(currentLine);
+ 		splitDouble = split(currentLine, isSpace);
 
 		// Store the rating of the user for the corresponding movie.
  		ratingMatrix[userMap[(int)splitDouble[0]]][movieMap[(int)splitDouble[1]]] = splitDouble[2];
@@ -188,7 +184,7 @@ vector<vector<double> > getRatingMatrix(const char* filename, map<long, int>& us
  	myfile.clear();
  	myfile.close();   
 
-	return ratingMatrix;
+	return 0;
 }
 
 // Used to calculate the distance between two vectors
@@ -201,6 +197,7 @@ double squareDistance(const std::vector<double>& a, const std::vector<double>& b
 		double d = a[i] - b[i];
 		total += d * d;
 	}
+
 	return total;
 }
 
@@ -224,7 +221,7 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, 
 	while (std::getline (myfile, currentLine)) 
     {
     	// Split the currentLine and only return the double parts
- 		splitDouble = split(currentLine);
+ 		splitDouble = split(currentLine, isSpace);
 		
 		// map from the user id to the corresponding cluster
  		userToClusterMap[splitDouble[0]] = splitDouble[1];
@@ -246,4 +243,77 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, 
 	*/
 
     return 0;
+}
+
+
+// Funciton used to split the sentence into its individual parts
+std::vector<std::string> getMovieIdName(const std::string& s)
+{
+	std::vector<std::string> returnString;
+
+	typedef std::string::size_type string_size;
+	string_size i = 0;
+	
+	int count = 0;
+	// invariant: we have processed characters `['original value of `i', `i)'
+	while (i != s.size() && count < 2)
+	{
+		// ignore leading blanks
+		// invariant: characters in range `['original `i', current `i)' are all spaces
+		while (i != s.size() && isColon(s[i]))
+			++i;
+
+		// find end of next word
+		string_size j = i;
+		// invariant: none of the characters in range `['original `j', current `j)' is a space
+		while (j != s.size() && !isColon(s[j]))
+			++j;
+
+		// if we found some nonwhitespace characters
+		if (i != j) 
+		{
+			// copy from `s' starting at `i' and taking `j' `\-' `i' chars
+			returnString.push_back(s.substr(i, j - i));
+			i = j;
+			count++;
+		}
+	}
+
+	return returnString;
+}
+
+int getMovieMap(const char* filename, std::map<long, Movie>& movieMap)
+{
+	string currentLine;						 // To hold the entire currentline
+	vector<string> splitData;				 // To hold the double values from the currentline
+	long movieId = 0;
+	
+	// Build a map from movie_ids to their titles
+	ifstream infile(filename);						 // Open the file for getting the input
+
+	//Always test the file open.
+	if(!infile) 
+	{
+	  cout<<"Error opening output file"<<endl;
+	  return -1;
+	}
+	
+	// keep on reading till we get to the end of the file
+	while(getline(infile, currentLine))
+	{
+		// Get the movie id and the name as strings
+		splitData = getMovieIdName(currentLine);
+
+		// Extract the movie id
+		movieId = (long)atof(splitData[0].c_str());
+
+		// Add the movie to the movieMap
+		movieMap[movieId] = Movie(movieId, splitData[1]);
+	}
+	
+	cout<<"Total Number of Movies: "<<movieMap.size()<<endl;
+	
+	infile.close();
+
+	return 0;
 }

@@ -5,22 +5,40 @@ using namespace PipeFish;
 
 int main()
 {
-    // Create the userMap and the movieMap
-    std::map<long, int>& userMap;
-    std::map<long, int>& movieMap;
+    cout<<"Reading in the Rating Matrix...\n";
+    // Create the userIndex and the movieIndex
+    std::map<long, int>& userIndex;
+    std::map<long, int>& movieIndex;
+    vector<vector<double> > ratingMatrix;
 
     // Get the rating matrix from the file
-    std::vector<std::vector<double> > ratingMatrix = getRatingMatrix("ratings.txt", userMap, movieMap);
-	
-    // Create the global userMap
+    int errorVal = getRatingMatrix("ratings.txt", userIndex, movieIndex);
+	if(errorVal != 0)
+        return errorVal;
+
+
+
+    cout<<"Creating the global MovieMap...\n";
+    // read the movies into the global MovieMap
+    map<long, Movie> movieMap;
+    errorVal = getMovieMap("Movies.dat", movieMap);
+    if(errorVal != 0)
+        return errorVal;
+
+    // Calculate the global average rating of the movies.
+    for()
+
+
+
+    // Create the global userIndex
     std::map<long, User> userList;
-    for(std::map<long, int>::const_iterator it = userMap.begin(); it != userMap.end(); it++)
+    for(std::map<long, int>::const_iterator it = userIndex.begin(); it != userIndex.end(); it++)
     {
         // add the user to the global user list using its id as index
         userList[it->first] = User(user->it);
 
         // set the rating vector for the user
-        userList[it->first].setRatingVector(ratingMatrix[it->first], movieMap);
+        userList[it->first].setRatingVector(ratingMatrix[it->first], movieIndex);
     }
 
 

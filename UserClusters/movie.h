@@ -3,6 +3,7 @@
 
 // Movie.h - version 1.0
 // Author: Ameya Vilankar
+#include <string>
 
 namespace PipeFish
 {
@@ -17,10 +18,11 @@ namespace PipeFish
 	    inline double getAverageRating() const {return averageRating; }
 	    inline void setAverageRating(double avg) { averageRating = avg; }
 
-	    Movie(long id = 0, double avg = 0.0):movieId(id), averageRating(avg) {}
+	    Movie(long id = 0, std::string name = "DEFAULT", double avg = 0.0):movieId(id), movieName(name), averageRating(avg) {}
 	
 	private:
 	    long movieId;                                           // Used to uniquely identify a Movie
+	    std::string movieName;									// Stores the name of the Movie
 	    double averageRating;									// Stores the average rating given to the movie by all the users 
 	    //TODO: Other Movie Related Data
 	

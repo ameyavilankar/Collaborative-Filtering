@@ -1,6 +1,6 @@
 #include "canberra.h"
-#include "readMatrix.h"
-#include "readMatrix.cpp"
+#include "readData.h"
+#include "readData.cpp"
 #include "canberra.cpp"
 #include <limits>
 

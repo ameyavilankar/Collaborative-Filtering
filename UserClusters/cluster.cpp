@@ -57,7 +57,7 @@ void PipeFish::Cluster::recommendMoviesToUser()
 		for(std::map<long, MovieInfo>::iterator movie_it = movieUniverse.begin(); movie_it != movieUniverse.end(); movie_it++)
 		{
 			if(ratings.find(movie_it->first) == ratings.end())
-				movieVector.push_back(/*TODO*/);
+				movieVector.push_back();
 		}
 
 		// OPTIONAL:: sort the vector according to the movie avd ratings or svd???
