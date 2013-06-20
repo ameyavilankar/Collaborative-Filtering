@@ -7,5 +7,13 @@
 #include "canberra.h"
 #include "readMatrix.h"
 #include "distances.h"
+#include <sstream>
+
+template<class T> std::string to_string(T n)
+{
+    std::ostringstream os;
+    os << n;
+    return os.str();
+}
 
 #endif

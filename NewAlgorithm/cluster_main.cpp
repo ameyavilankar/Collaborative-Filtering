@@ -16,6 +16,7 @@ using std::ifstream;
 using std::map;
 using std::ofstream;
 
+
 // Used to get the map from the users to their assigned cluster
 int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, map<int, vector<long> >& clusterToUserMap)
 {
@@ -135,9 +136,7 @@ int main()
 	int errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
 	cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
 	
-	for(int i = 0 ; i < ratingMatrix[101].size(); i++)
-	    cout<<ratingMatrix[101][i]<<" ";
-	cout<<endl;
+	
 	
 	cout<<"Calculating the userMap and the userVector...\n";
 	// Get the userMap and the userVector
@@ -145,7 +144,7 @@ int main()
 	vector<long> userVector(ratingMatrix.size());
 	getUserMapAndVector(ratingMatrix, userMap, userVector);
 	
-	
+
 
 	cout<<"Geting the userToClusterMap and the clusterToUserMap...\n";
 	map<long, int> userToClusterMap;
@@ -158,60 +157,65 @@ int main()
 	
 
 	
-	cout<<"Calculating the ratingMatrix and vector for Cluster 1...\n";
-	vector<vector<double> > clusterRatingMatrix;
-	for(int i = 0; i < clusterToUserMap[1].size(); i++)
-		clusterRatingMatrix.push_back(ratingMatrix[userMap[clusterToUserMap[1][i]]]);
-	cout<<"clusterRatingMatrix size: "<<clusterRatingMatrix.size()<<"\n";
-
-	for(int i = 0; i < clusterRatingMatrix.size(); i++)
-	    cout<<clusterRatingMatrix[i][0]<<" "<<clusterToUserMap[1][i]<<"\n";
-	cout<<endl;
-
+	cout<<"Calculating the ratingMatrix and vector for all the Clusters...\n";
 	
-	
-	cout<<"Calculating and Processing the distance Matrix...\n";
-	// Calculate the cosine distances to the R randomly selected users
-	vector<vector<double> > cosineDistances;
-
-	// For each user in the matrix calculate the cosine distance with the NUM_FEATURES randomly selected users
-	for(int i = 0; i < clusterRatingMatrix.size(); i++)
+	for(map<int, vector<long> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
 	{
+		cout<<"Calculating for cluster: "<<cluster_it->first<<"\n";
 
-		// This will hold the cosine distances for the current user
-		vector<double> distance(clusterRatingMatrix.size() + 1);
+		vector<vector<double> > clusterRatingMatrix;
+		for(int i = 0; i < cluster_it->second.size(); i++)
+			clusterRatingMatrix.push_back(ratingMatrix[userMap[cluster_it->second[i]]]);
+		cout<<"clusterRatingMatrix size: "<<clusterRatingMatrix.size()<<"\n";
 
-		// The first entry holds the userid which is taken from the ratingMatrix
-		distance[0] = clusterRatingMatrix[i][0];
 		
-		// Calculate the cosine similarity with the randomly selected users		
-		for(int j = 0; j < clusterRatingMatrix.size(); j++)
-		{	
-			distance[j + 1]  = cosineSimilarity(vector<double>(clusterRatingMatrix[i].begin() + 1, clusterRatingMatrix[i].end()), vector<double>(clusterRatingMatrix[j].begin() + 1, clusterRatingMatrix[j].end()));
+		for(int i = 0; i < clusterRatingMatrix.size(); i++)
+		    cout<<clusterRatingMatrix[i][0]<<" "<<clusterToUserMap[1][i]<<"\n";
+		
+
+		cout<<"Calculating and Processing the distance Matrix...\n";
+		// Calculate the cosine distances to the R randomly selected users
+		vector<vector<double> > cosineDistances;
+
+		// For each user in the matrix calculate the cosine distance with the NUM_FEATURES randomly selected users
+		for(int i = 0; i < clusterRatingMatrix.size(); i++)
+		{
+
+			// This will hold the cosine distances for the current user
+			vector<double> distance(clusterRatingMatrix.size() + 1);
+
+			// The first entry holds the userid which is taken from the ratingMatrix
+			distance[0] = clusterRatingMatrix[i][0];
+			
+			// Calculate the cosine similarity with the randomly selected users		
+			for(int j = 0; j < clusterRatingMatrix.size(); j++)
+			{	
+				distance[j + 1]  = cosineSimilarity(vector<double>(clusterRatingMatrix[i].begin() + 1, clusterRatingMatrix[i].end()), vector<double>(clusterRatingMatrix[j].begin() + 1, clusterRatingMatrix[j].end()));
+			}
+
+			// Add the distance to the cosine Distance Matrix
+			cosineDistances.push_back(distance);
 		}
 
-		// Add the distance to the cosine Distance Matrix
-		cosineDistances.push_back(distance);
-	}
+
+		cout<<"Dimensions of the Cosine Distance Matrix: "<<cosineDistances.size()<<", "<<cosineDistances[0].size()<<endl;
 
 
-	cout<<"Dimensions of the Cosine Distance Matrix: "<<cosineDistances.size()<<", "<<cosineDistances[0].size()<<endl;
-	
+		// Preprocess the matrix
+		preprocessMatrix(cosineDistances);
 
-	// Preprocess the matrix
-	preprocessMatrix(cosineDistances);
+		cout<<"Saving the Matrix to the file...\n";
+		// Save it to the file
+		ofstream outfile;
+		outfile.open(("SVDInput" + to_string(cluster_it->first) + ".txt").c_str());
+		for(int i = 0; i < cosineDistances.size(); i++)
+		{
+			for(int j = 1; j < cosineDistances[i].size(); j++)
+				outfile<<i + 1<<" "<<j<<" "<<cosineDistances[i][j]<<endl;
+		}
 
-	cout<<"Saving the Matrix to the file...\n";
-	// Save it to the file
-	ofstream outfile;
-	outfile.open("SVDInput.txt");
-	for(int i = 0; i < cosineDistances.size(); i++)
-	{
-		for(int j = 1; j < cosineDistances[i].size(); j++)
-			outfile<<i + 1<<" "<<j<<" "<<cosineDistances[i][j]<<endl;
-	}
+		outfile.close();
+	}	
 
-	outfile.close();
-	
 	return 0;
 }
