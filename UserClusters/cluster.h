@@ -9,14 +9,17 @@ namespace PipeFish
 {
 	struct MovieInfo
 	{
+		Movie movie;
 		double averageRating;
 		int numRatings;
+
+		MovieInfo(const Movie& m = Movie(), double avg = 0.0, int num = 0): movie(m), averageRating(avg), numRatings(num) {}
 	};
 	
 	// Used to represent a single cluster.
 	class Cluster
 	{
-	public:
+	public: 	
 	    // Get and Set Functions
 	    inline int getClusterId() const { return clusterId; }
 	    inline void setClusterId(int id) { clusterId = id; }
@@ -25,8 +28,13 @@ namespace PipeFish
 	    inline std::map<long, User> getUsersFromCluster() const { return users; }
 		inline std::map<long, MovieInfo> geMovieUniverse() const { return movieUniverse; }
 	    
-	    // Cluster Constructor
-	    Cluster(int id = 0): clusterId(id) {}
+	    // Cluster Constructors
+	    Cluster(int id = 0) : clusterId(id) {}
+	    Cluster(int id, std::vector<double> center, std::map<long, User> userMap): clusterId(id)
+	    {
+	    	clusterCenter = center;
+	    	users = userMap;
+	    } 
 	    
 	    // Add user to the cluster
 	    inline void addUser(const User& user)
@@ -34,10 +42,9 @@ namespace PipeFish
 	    	//TODO: check if required to check for preseent in hastable or not
 	        users[user.getUserId()] = user;
 	    }
-	    
-	    void calculateClusterCenter();
-	    void buildMovieUniverse();
-	    void recommendMoviesToUser();
+
+	    void buildMovieUniverse(std::map<long, Movie>& movieMap);
+	    void recommendMoviesToUser(std::map<long, Movie>& movieMap);
 	    
 	private:
 	    int clusterId;                                          // Cluster Id to identify the cluster.

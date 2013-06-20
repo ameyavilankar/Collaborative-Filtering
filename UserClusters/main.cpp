@@ -70,29 +70,42 @@ int main()
         userList[it->first].setRatingVector(ratingMatrix[it->first], movieIndex);
     }
 
-    
-    // Calculate the Cluster Centers and the Movie Universe for all of the users
-    //for(std::map<int, Cluster>::iterator it = clusterMap.begin(); it != clusterMap.end(); it++)
-    // for(int i = 0; i < clusterMap.size(); i++)
-    // {
-    //     clusterMap[i].calculateClusterCenter();
-    //     clusterMap[i].buildMovieUniverse();
-    // }
+    // Replace by unordered_map or unordered_set
+    map<int, Cluster> clusterMap;
+    map<int, long> clusterCenterUser;  // TODO: read the map from file
+    vector<long> userVector;
+    map<long, User> clusterUserMap;
+
+    for(map<int, vector<long> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
+    {
+        // Get the vector for the current cluster
+        userVector = clusterToUserMap[cluster_it->first];
+
+        // Get the corresponding user in a map
+        for(int i = 0; i < userVector.size(); i++)
+            clusterUserMap[userVector[i]] = userList[userVector[i]];
+
+        // Create and add the cluster to the clusterMap
+        clusterMap[cluster_it->first] = Cluster(cluster_it->first, ratingMatrix[userIndex[clusterCenterUser[cluster_it->first]]], clusterUserMap);
+
+        clusterMap[cluster_it->first].buildMovieUniverse(movieMap);
+        clusterMap[cluster_it->first].recommendMoviesToUser(movieMap);
+    }
 
 
-    // cout<<"Clusters and their corresponding Users SORTED according to the userid: "<<endl;
-    // for(std::map<int, Cluster >::const_iterator it = clusterMap.begin(); it != clusterMap.end(); it++)
-    // {
-    //     cout<<"Cluster No.: "<<it->first<<endl;
+    cout<<"Clusters and their corresponding Users SORTED according to the userid: "<<endl;
+    for(std::map<int, Cluster >::const_iterator it = clusterMap.begin(); it != clusterMap.end(); it++)
+    {
+        cout<<"Cluster No.: "<<it->first<<endl;
 
-    //     // Output all the users in that cluster
-    //     std::map<long, User> clusterUsers = it->second.getUsersFromCluster();
+        // Output all the users in that cluster
+        std::map<long, User> clusterUsers = it->second.getUsersFromCluster();
 
-    //     for(std::map<long, User>::const_iterator user_it = clusterUsers.begin(); user_it != clusterUsers.end(); user_it++)
-    //         cout<<user_it->second.getUserId()<<" ";
+        for(std::map<long, User>::const_iterator user_it = clusterUsers.begin(); user_it != clusterUsers.end(); user_it++)
+            cout<<user_it->second.getUserId()<<" ";
         
-    //     cout<<endl;
-    // }
+        cout<<endl;
+    }
 
     //Create the universe of all movies
     map<long, Movie> movieUniverse;

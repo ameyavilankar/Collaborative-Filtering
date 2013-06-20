@@ -1,29 +1,9 @@
 #include "cluster.h"
 
+using std::map;
+using std::vector;
 
-// Calculates the cluster center by averagin the rating vectors of all the users in the cluster
-void PipeFish::Cluster::calculateClusterCenter()
-{
-	// Reset the cluster center to all zeros
-	for(size_t i = 0; i < clusterCenter.size(); i++)
-		clusterCenter[i] = 0.0;
-
-	// Sum the rating Vectors of all the users in the cluster
-	std::vector<double> temp;
-	for(std::map<long, User>::const_iterator it = users.begin(); it != users.end(); it++)
-	{
-		temp = it->second.getRatingVector();
-
-		for(int j = 0; j < temp.size(); j++)
-			clusterCenter[j] += temp[j];
-	}
-
-	// Take the mean of all the values
-	for(int i = 0; i < clusterCenter.size(); i++)
-		clusterCenter[i] /= users.size();
-}
-
-void PipeFish::Cluster::buildMovieUniverse()
+void PipeFish::Cluster::buildMovieUniverse(std::map<long, Movie>& movieMap)
 {
 	std::map<long, double> movieRatings;
 
@@ -34,6 +14,7 @@ void PipeFish::Cluster::buildMovieUniverse()
 
 		for(std::map<long, double>::const_iterator it = movieRatings.begin(); it != movieRatings.end(); it++)
 		{
+			movieUniverse[it->first].movie = movieMap[it->first];
 			movieUniverse[it->first].averageRating += it->second;
 			movieUniverse[it->first].numRatings++;	
 		}
@@ -44,7 +25,7 @@ void PipeFish::Cluster::buildMovieUniverse()
 		it->second.averageRating /=it->second.numRatings;
 }
 
-void PipeFish::Cluster::recommendMoviesToUser()
+void PipeFish::Cluster::recommendMoviesToUser(std::map<long, Movie>& movieMap)
 {
 
 	for(std::map<long, User>::iterator user_it = users.begin(); user_it != users.end(); user_it++)
@@ -57,7 +38,7 @@ void PipeFish::Cluster::recommendMoviesToUser()
 		for(std::map<long, MovieInfo>::iterator movie_it = movieUniverse.begin(); movie_it != movieUniverse.end(); movie_it++)
 		{
 			if(ratings.find(movie_it->first) == ratings.end())
-				movieVector.push_back();
+				movieVector.push_back(movie_it->second.movie);
 		}
 
 		// OPTIONAL:: sort the vector according to the movie avd ratings or svd???
@@ -65,6 +46,4 @@ void PipeFish::Cluster::recommendMoviesToUser()
 		user_it->second.setRecommendedMovies(movieVector);
 	}
 
-	
-		
 }
