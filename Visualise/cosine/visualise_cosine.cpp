@@ -397,6 +397,56 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 	
 }
 
+void saveNodes(map<long, int>& userToClusterMap, map<long, int>& checkMap, map<int, long>& clusterCenterUser)
+{
+	int correct = 0;
+
+	// Save the Checkcluster to file TODO: Rewrite as a function
+	ofstream outfile;
+	outfile.open("Nodes.txt");
+
+	for(map<long, int>::const_iterator it = userToClusterMap.begin(); it != userToClusterMap.end(); it++)
+	{
+	    outfile<<it->first<<", "<<it->second<<", ";
+
+	    if(it->first == clusterCenterUser[it->second])
+	    	outfile<<"true\n";
+	    else
+	    	outfile<<"false\n";
+	}
+	
+	outfile.close();
+}
+
+
+void saveLinks(map<int, vector<long> >& clusterToUserMap, map<int, map<int, int> >& clusterToClusterDistances, map<int, map<long, int> >& clusterUserDistances, map<int, long>& clusterCenterUser, map<long, vector<double> >& ratingMatrix)
+{
+	ofstream outfile;
+	outfile.open("Links.txt");
+		
+	// Add all the lines from one cluster to another
+	for(map<int, map<int, int> >::const_iterator it = clusterToClusterDistances.begin(); it != clusterToClusterDistances.end(); it++)
+	{
+		for(map<int, int>::const_iterator second_it = it->second.begin(); second_it != it->second.end(); second_it++)
+		{
+			outfile << clusterCenterUser[it->first] << ", " << clusterCenterUser[second_it->first] << ", " << clusterToClusterDistances[it->first][second_it->first] << "\n";
+		}
+	}
+	
+	// Add links between all the users in one cluster
+	for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
+	{
+		for(int i = 0; i < it->second.size() - 1; i++)
+			for(int j = i + 1; j < it->second.size(); j++)
+			{
+				outfile << it->second[i] << ", " << it->second[j] << ", " << calculateDistance(ratingMatrix, it->second[i], it->second[j]) << "\n";
+			}	
+	}
+	
+	// Close the two writing files
+	outfile.close();
+}
+
 
 int main()
 {
@@ -458,6 +508,10 @@ int main()
 	saveClusterCenters(clusterCenterUser);
 	cout<<"Saving the individual clusters to the file...\n"; 
 	saveClusters(clusterToUserMap, clusterUserDistances, ratingMatrix, clusterCenterUser);
+
+	cout<<"Saving the new files...\n";
+	saveNodes(userToClusterMap, checkMap, clusterCenterUser);
+	saveLinks(clusterToUserMap, clusterToClusterDistances, clusterUserDistances, clusterCenterUser, ratingMatrix);
 
 	return 0;
 
