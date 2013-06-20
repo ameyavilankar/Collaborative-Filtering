@@ -25,6 +25,9 @@ namespace PipeFish
 	    inline int getClusterId(int id) { return clusterId; }
 	    inline void setClusterId(int id) { clusterId = id; }
 	    
+	    inline bool isClusterCenter() const { return clusterCenter; }
+	    inline void setClusterCenter(bool flag) { clusterCenter = flag; }
+
 	    inline std::vector<double> getRatingVector() const { return ratingVector; }
 	    inline void setRatingVector(std::vector<double> rat, std::map<long, int>& movieMap) 
 	    { 
@@ -46,7 +49,7 @@ namespace PipeFish
 	    inline void updateRating(const Movie& newMovie, double rating = 3.0);
 
 	    // TODO: Add Movie by id
-	    User(long id = 0, int cId = 0): userId(id), clusterId(cId) {}
+	    User(long id = 0, int cId = 0, bool flag = false): userId(id), clusterId(cId), clusterCenter(flag) {}
 
 	private:
 	    long userId;                                            // Stores the id of the User.
@@ -54,7 +57,7 @@ namespace PipeFish
 	    std::map<long, double> movieRatings;                    // Stores the Movies rated by the User.
 	    std::vector<Movie> recommendedMovies;                   // Stores the List of Movies not seen by the user but seen by other users in the cluster. ORDERED?
 	   	std::vector<double> ratingVector;						// Stores the rating Vector used for calculations
-
+	   	bool clusterCenter;											// Stores whether the user is the center of the cluster that it belongs to
 	    // TODO: Other user related data like name, etc.
 
 	    //private functions

@@ -40,6 +40,5 @@ int getUserToClusterMap(const char* filename, std::map<long, int>& userToCluster
 int getMovieMap(const char* filename, std::map<long, PipeFish::Movie>& movieMap);
 std::vector<std::string> getMovieIdName(const std::string& s);
 
-
 #endif
 
