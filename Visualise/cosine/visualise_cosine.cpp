@@ -421,30 +421,41 @@ void saveNodes(map<long, int>& userToClusterMap, map<long, int>& checkMap, map<i
 
 void saveLinks(map<int, vector<long> >& clusterToUserMap, map<int, map<int, int> >& clusterToClusterDistances, map<int, map<long, int> >& clusterUserDistances, map<int, long>& clusterCenterUser, map<long, vector<double> >& ratingMatrix)
 {
-	ofstream outfile;
-	outfile.open("Links.txt");
-		
-	// Add all the lines from one cluster to another
-	for(map<int, map<int, int> >::const_iterator it = clusterToClusterDistances.begin(); it != clusterToClusterDistances.end(); it++)
+	// define the constant strings
+	const string cluster = "cluster_";
+	const string links = "_links.txt";
+
 	{
-		for(map<int, int>::const_iterator second_it = it->second.begin(); second_it != it->second.end(); second_it++)
+		ofstream outfile;
+		outfile.open("clusterLinks.txt");
+			
+		// Add all the lines from one cluster to another
+		for(map<int, map<int, int> >::const_iterator it = clusterToClusterDistances.begin(); it != clusterToClusterDistances.end(); it++)
 		{
-			outfile << clusterCenterUser[it->first] << ", " << clusterCenterUser[second_it->first] << ", " << clusterToClusterDistances[it->first][second_it->first] << "\n";
+			for(map<int, int>::const_iterator second_it = it->second.begin(); second_it != it->second.end(); second_it++)
+			{
+				outfile << clusterCenterUser[it->first] << ", " << clusterCenterUser[second_it->first] << ", " << clusterToClusterDistances[it->first][second_it->first] << "\n";
+			}
 		}
+		
+		outfile.close();
 	}
 	
 	// Add links between all the users in one cluster
 	for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
 	{
+		ofstream outfile;
+		outfile.open((cluster + to_string(it->first) +  links).c_str());
+		
+		cout<<"For Cluster: "<<it->first<<"\n";
 		for(int i = 0; i < it->second.size() - 1; i++)
 			for(int j = i + 1; j < it->second.size(); j++)
 			{
 				outfile << it->second[i] << ", " << it->second[j] << ", " << calculateDistance(ratingMatrix, it->second[i], it->second[j]) << "\n";
-			}	
+			}
+
+		outfile.close();
 	}
-	
-	// Close the two writing files
-	outfile.close();
 }
 
 
