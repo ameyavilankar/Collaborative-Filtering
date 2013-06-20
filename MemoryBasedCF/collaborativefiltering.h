@@ -37,7 +37,7 @@ std::map<std::string, std::map<long, double> > transformPrefs(const std::map<lon
 std::vector<std::pair<long, double> > topMatchesUsers(std::map<long, std::map<std::string, double> >& userToMovie, long user, int n = 20);
 
 // Get the top N movies similar to a movie
-std::vector<std::pair<std::string, double> > topMatchesMovies(std::map<std::string, std::map<long, double> >& movieToUser, const std::string& movie, std::map<long, double>& averageRatings, int n = 20);
+std::vector<std::pair<std::string, double> > topMatchesMovies(std::map<std::string, std::map<long, double> >& movieToUser, std::map<long, std::map<std::string, double> >& userToMovie, const std::string& movie, std::map<long, double>& averageRatings, int n = 20);
 
 // Get the positive correlated users corresponding to a user
 std::vector<std::pair<long, double> > positiveCorrelationUsers(const std::map<long, std::map<std::string, double> >& userToMovie, long user, int n = 20);
@@ -64,7 +64,7 @@ std::map<long, std::vector<std::pair<std::string, double> > > getRecommendations
 std::map<long, std::vector<std::pair<long, double> > > calculateSimilarUsers(std::map<long, std::map<std::string, double> >& userToMovie, int n = 20);
 
 // Calculates top N similar for all movies
-std::map<std::string, std::vector<std::pair<std::string, double> > > calculateSimilarMovies(std::map<std::string, std::map<long, double> >& movieToUser, std::map<long, double>& averageRatings, int n = 20);
+std::map<std::string, std::vector<std::pair<std::string, double> > > calculateSimilarMovies(std::map<std::string, std::map<long, double> >& movieToUser, std::map<long, std::map<std::string, double> >& userToMovie, std::map<long, double>& averageRatings, int n = 20);
 //-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 /*

@@ -155,7 +155,7 @@ vector<pair<long, double> > topMatchesUsers(map<long, map<string, double> >& use
 }
 
 
-vector<pair<string, double> > topMatchesMovies(map<string, map<long, double> >& movieToUser, const string& movie, map<long, double>& averageRatings, int n)
+vector<pair<string, double> > topMatchesMovies(map<string, map<long, double> >& movieToUser, map<long, map<string, double> >& userToMovie, const string& movie, map<long, double>& averageRatings, int n)
 {
 	// To hold the movies and the similarity scores
 	vector<pair<string, double> > scores;
@@ -163,10 +163,18 @@ vector<pair<string, double> > topMatchesMovies(map<string, map<long, double> >& 
 	// Used for holding the common users to cacluate the similarity scores
 	vector<double> one, two, user_avg;
 	double score = 0.0;
+	
+	/*
+	for the current movie, find all the users who rated the movie, find the universe of movies rated by these users
+	*/
+
+	// Get the list of users who have rated the current movie
+	map<long, double> movieUsers = movieToUser[movie];
+	
+	// For each user in the list, add all the movies seen by them in the movie_universe
+	for(map<long, double>::const_iterator user_it = movieUsers.begin(); user_it != movieUsers.end(); user_it++)
 
 
-	// TODO CHANGE: Find the movies according to algortihm
-	// TODO TODO TODO
 	// Go through all other movies except for the current movie
 	for(map<string, map<long, double> >::const_iterator movie_iter = movieToUser.begin(); movie_iter != movieToUser.end(); movie_iter++)
 		if(movie_iter->first != movie)
@@ -289,10 +297,7 @@ vector<pair<string, double> > getRecommendationsIBSingle(map<long, map<string, d
 
 	//Create maps to hold the total of the weighted ratings and the total of the similarity scores
 	map<string, double> scores;
-	map<string, double> totalSum;
-
-	// There may be repeated movies counted for....TODO TODO TODO
-
+	map<string, double> totalSum;	
 
 	// Loop throuhg all the movies rated by the user
 	for(map<string, double>::const_iterator movie_iter = userRatings.begin(); movie_iter != userRatings.end(); movie_iter++)
@@ -311,7 +316,6 @@ vector<pair<string, double> > getRecommendationsIBSingle(map<long, map<string, d
 
 				// Sum the similarity ratings for normalization
 				totalSum[similar_iter->first] += similar_iter->second;
-
 			}
 		}
 	}
@@ -376,7 +380,7 @@ map<long, vector<pair<long, double> > > calculateSimilarUsers(map<long, map<stri
 
 
 
-map<string, vector<pair<string, double> > > calculateSimilarMovies(map<string, map<long, double> >& movieToUser, map<long, double>& averageRatings, int n)
+map<string, vector<pair<string, double> > > calculateSimilarMovies(map<string, map<long, double> >& movieToUser, map<long, map<string, double> >& userToMovie, map<long, double>& averageRatings, int n)
 {
 	map<string, vector<pair<string, double> > > similarMovies;
 
@@ -387,7 +391,7 @@ map<string, vector<pair<string, double> > > calculateSimilarMovies(map<string, m
 		if(count % 100 == 0)
 			cout<<"("<<count<<",\t"<<movieToUser.size()<<")"<<endl;
 
-		similarMovies[movie_iter->first] = topMatchesMovies(movieToUser, movie_iter->first, averageRatings);
+		similarMovies[movie_iter->first] = topMatchesMovies(movieToUser, userToMovie, movie_iter->first, averageRatings);
 	}
 
 	return similarMovies;

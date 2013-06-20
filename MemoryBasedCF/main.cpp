@@ -39,7 +39,7 @@ int main()
 	map<long, double> averageRatings = getAverageRatings(userToMovie);
 
 	cout<<"Calculating the top similar Movies for each movie...\n";
-	map<string, vector<pair<string, double> > > topSimilarMovies = calculateSimilarMovies(movieToUser, averageRatings);
+	map<string, vector<pair<string, double> > > topSimilarMovies = calculateSimilarMovies(movieToUser, userToMovie, averageRatings);
 	
 	cout<<"Calculating the recommendations for each user...\n";
 	map<long, vector<pair<string, double> > > recommendedItemsItemBased = getRecommendationsItemBased(userToMovie, topSimilarMovies);

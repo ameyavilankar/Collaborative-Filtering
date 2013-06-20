@@ -105,7 +105,7 @@ int main()
 	if(errorVal != 0)
 		return errorVal;
 
-    	cout<<"Before shuffling top NUM_FEATURES: \n";
+    cout<<"Before shuffling top NUM_FEATURES: \n";
 	for(int i = 0; i < NUM_FEATURES; i++)
 		cout<<userVector[i]<<" ";
 	cout<<endl;
