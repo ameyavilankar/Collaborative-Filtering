@@ -26,6 +26,62 @@ using std::cout;
 using std::endl;
 using std::map;
 
+struct item
+{
+    // variables
+    long itemid;
+    std::string itemname;
+    std::vector<double> ratingVector;
+    std::map<double> sparseVector;
+    
+    // Constructor
+    item(long id = 0, std::string name = ""): itemid(id), itemname(name) {}
+
+    // Serializable functions
+    void save(graphlab::oarchive& oarc) const
+    {
+	oarc << itemid << itemname;
+    }
+
+    void load(graphlab::iarchive& iarc)
+    {
+	iarc << itemname << itemid;
+    }
+};
+
+
+// Defining the Edge data structure
+
+// Defining the type of graph that will be used by graphlab
+typedef graphlab::distributed_graph<item, graphlab::empty> graph_type;
+
+// function to read the vertex data from file into the graph
+bool line_parser(graph_type& graph, const std::string& filename, const std::string& textline)
+{
+    std::stringstream strm(textline);
+    graphlab::vertex_id_type vid;
+    std::string itemname;
+
+    // Insert this item into the graph
+    graph.add_vertex(vid, item(vid, item((long)(vid), itemname)));
+
+    // Add code to read the ratingVector/sparseVector
+    
+
+    // Read the edges that will go from this edge to all the others
+    while(true)
+    {
+	graphlab::vertex_id_type edge_vid;
+	strm >> edge_vid;
+	
+	// Reched the end of the file or read something that is not a vertex id
+	if(strm.fail())
+	    break;
+	
+	// add the edge between the two vertices
+	graph.add_edge(vid, edge_vid);
+    }
+}
 
 
 size_t NUM_CLUSTERS = 0;
