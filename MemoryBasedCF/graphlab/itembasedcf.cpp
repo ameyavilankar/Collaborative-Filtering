@@ -26,34 +26,33 @@ using std::cout;
 using std::endl;
 using std::map;
 
+
+// This represents each vertex of the graph
 struct item
 {
-    // variables
-    long itemid;
-    std::string itemname;
-    std::vector<double> ratingVector;
-    std::map<double> sparseVector;
-    
-    // Constructor
-    item(long id = 0, std::string name = ""): itemid(id), itemname(name) {}
+  // variables
+  long itemid;
+  std::string itemname;
 
-    // Serializable functions
-    void save(graphlab::oarchive& oarc) const
-    {
-	oarc << itemid << itemname;
-    }
+  // Only one of them should be used
+  std::vector<double> ratingVector;
+  std::map<double> sparseVector;
 
-    void load(graphlab::iarchive& iarc)
-    {
-	iarc << itemname << itemid;
-    }
+  // Constructor
+  item(long id = 0, std::string name = ""): itemid(id), itemname(name) {}
+
+  // Serializable functions
+  void save(graphlab::oarchive& oarc) const
+  {
+    oarc << itemid << itemname;
+  }
+
+  void load(graphlab::iarchive& iarc)
+  {
+    iarc << itemname << itemid;
+  }
 };
 
-
-// Defining the Edge data structure
-
-// Defining the type of graph that will be used by graphlab
-typedef graphlab::distributed_graph<item, graphlab::empty> graph_type;
 
 // function to read the vertex data from file into the graph
 bool line_parser(graph_type& graph, const std::string& filename, const std::string& textline)
@@ -71,194 +70,49 @@ bool line_parser(graph_type& graph, const std::string& filename, const std::stri
     // Read the edges that will go from this edge to all the others
     while(true)
     {
-	graphlab::vertex_id_type edge_vid;
-	strm >> edge_vid;
-	
-	// Reched the end of the file or read something that is not a vertex id
-	if(strm.fail())
-	    break;
-	
-	// add the edge between the two vertices
-	graph.add_edge(vid, edge_vid);
+    	graphlab::vertex_id_type edge_vid;
+    	strm >> edge_vid;
+    	
+    	// Reched the end of the file or read something that is not a vertex id
+    	if(strm.fail())
+    	    break;
+    	
+    	// add the edge between the two vertices
+    	graph.add_edge(vid, edge_vid);
     }
 }
 
-
-size_t NUM_CLUSTERS = 0;
-bool IS_SPARSE = false;
-
-
-struct cluster {
-  cluster(): count(0), changed(false) { }
-  std::vector<double> center;
-  std::map<size_t, double> center_sparse;
-  size_t count;
-  bool changed;
-
-  void save(graphlab::oarchive& oarc) const {
-    oarc << center << count << changed << center_sparse;
-  }
-
-  void load(graphlab::iarchive& iarc) {
-    iarc >> center >> count >> changed >> center_sparse;
-  }
-};
-
-std::vector<cluster> CLUSTERS;
+// To hold all the items
+std::vector<item> ITEMS;
 
 // the current cluster to initialize
-size_t KMEANS_INITIALIZATION;
-
-struct vertex_data{
-  std::vector<double> point;
-  std::map<size_t, double> point_sparse;
-  size_t best_cluster;
-  double best_distance;
-  bool changed;
-
-  void save(graphlab::oarchive& oarc) const {
-    oarc << point << best_cluster << best_distance << changed << point_sparse;
-  }
-  void load(graphlab::iarchive& iarc) {
-    iarc >> point >> best_cluster >> best_distance >> changed >> point_sparse;
-  }
-};
+size_t current_cluster;
 
 //use edges when edge weight file is given
-struct edge_data {
-  double weight;
+struct score {
+  double similarity_score;
 
-  edge_data() :
-      weight(0.0) {
+  // Constructors
+  score() :
+      similarity_score(0.0) {
   }
-  explicit edge_data(double w) :
-      weight(w) {
+  
+  explicit score(double score) :
+      similarity_score(score) {
   }
 
+  // To save the edge data to file
   void save(graphlab::oarchive& oarc) const {
     oarc << weight;
   }
+
   void load(graphlab::iarchive& iarc) {
     iarc >> weight;
   }
 };
 
-
-// helper function to compute distance between points
-double sqr_distance(const std::vector<double>& a,
-                    const std::vector<double>& b) {
-  ASSERT_EQ(a.size(), b.size());
-  double total = 0;
-  for (size_t i = 0;i < a.size(); ++i) {
-    double d = a[i] - b[i];
-    total += d * d;
-  }
-  return total;
-}
-
-double sqr_distance(const std::map<size_t, double>& a,
-                    const std::map<size_t, double>& b) {
-  double total = 0.0;
-  for(std::map<size_t, double>::const_iterator iter = a.begin();
-      iter != a.end(); ++iter){
-    size_t id = (*iter).first;
-    double val = (*iter).second;
-    if(b.find(id) != b.end()){
-      double d = val - b.at(id);
-      total += d*d;
-    }else{
-      total += val * val;
-    }
-  }
-  for(std::map<size_t, double>::const_iterator iter = b.begin();
-      iter != b.end(); ++iter){
-    double val = (*iter).second;
-    if(a.find((*iter).first) == a.end()){
-      total += val * val;
-    }
-  }
-
-  return total;
-
-////   cosine distance is better for sparse datapoints?
-//    double ip = 0.0;
-//    double lenA = 0.0;
-//    double lenB = 0.0;
-//    for(std::map<size_t, double>::const_iterator iter = a.begin();
-//        iter != a.end(); ++iter){
-//      size_t id = (*iter).first;
-//      double val = (*iter).second;
-//      if(b.find(id) != b.end()){
-//        ip += val * b.at(id);
-//      }
-//      lenA += val*val;
-//    }
-//
-//    if(ip == 0.0 || lenA == 0.0)
-//      return 1.0;
-//
-//    for(std::map<size_t, double>::const_iterator iter = b.begin();
-//        iter != b.end(); ++iter){
-//      double val = (*iter).second;
-//      lenB += val * val;
-//    }
-//
-//    if(lenB == 1.0)
-//      return 1.0;
-//
-//    return 1.0 - ip/(sqrt(lenA)*sqrt(lenB));
-
-}
-
-
-// helper function to add two vectors
-std::vector<double>& plus_equal_vector(std::vector<double>& a,
-                                       const std::vector<double>& b) {
-  ASSERT_EQ(a.size(), b.size());
-  for (size_t i = 0;i < a.size(); ++i) {
-    a[i] += b[i];
-  }
-  return a;
-}
-
-// helper function to add two vectors
-std::map<size_t, double>& plus_equal_vector(std::map<size_t, double>& a,
-                                       const std::map<size_t, double>& b) {
-  for(std::map<size_t, double>::const_iterator iter = b.begin();
-    iter != b.end(); ++iter){
-    size_t id = (*iter).first;
-    double val = (*iter).second;
-    if(a.find(id) != a.end()){
-      a[id] += b.at(id);
-    }else{
-      a.insert(std::make_pair<size_t, double>(id, val));
-    }
-  }
-  return a;
-}
-
-// helper function to scale a vector vectors
-std::vector<double>& scale_vector(std::vector<double>& a, double d) {
-  for (size_t i = 0;i < a.size(); ++i) {
-    a[i] *= d;
-  }
-  return a;
-}
-
-// helper function to scale a vector vectors
-std::map<size_t, double>& scale_vector(std::map<size_t, double>& a, double d) {
-  for(std::map<size_t, double>::iterator iter = a.begin();
-    iter != a.end(); ++iter){
-  size_t id = (*iter).first;
-  double val = (*iter).second;
-  a[id] = val*d;
-//    (*iter).second *= d;
-  }
-  return a;
-}
-
-
-typedef graphlab::distributed_graph<vertex_data, edge_data> graph_type;
+// Define the distibuted graph using the vertex and the edge data type
+typedef graphlab::distributed_graph<item, score> graph_type;
 
 graphlab::atomic<graphlab::vertex_id_type> NEXT_VID;
 
@@ -281,29 +135,6 @@ bool vertex_loader(graph_type& graph, const std::string& fname,
      ascii::space);
 
   if (!success) return false;
-  vtx.best_cluster = (size_t)(-1);
-  vtx.best_distance = std::numeric_limits<double>::infinity();
-  vtx.changed = false;
-  graph.add_vertex(NEXT_VID.inc_ret_last(1), vtx);
-  return true;
-}
-
-// Read a line from a file and creates a vertex
-bool vertex_loader_sparse(graph_type& graph, const std::string& fname,
-                   const std::string& line) {
-  if (line.empty()) return true;
-
-  vertex_data vtx;
-  boost::char_separator<char> sep(" ");
-  boost::tokenizer< boost::char_separator<char> > tokens(line, sep);
-  BOOST_FOREACH (const std::string& t, tokens) {
-    std::string::size_type pos = t.find(":");
-    if(pos > 0){
-      size_t id = (size_t)std::atoi(t.substr(0, pos).c_str());
-      double val = std::atof(t.substr(pos+1, t.length() - pos -1).c_str());
-      vtx.point_sparse.insert(std::make_pair<size_t, double>(id, val));
-    }
-  }
   vtx.best_cluster = (size_t)(-1);
   vtx.best_distance = std::numeric_limits<double>::infinity();
   vtx.changed = false;
@@ -338,38 +169,6 @@ bool vertex_loader_with_id(graph_type& graph, const std::string& fname,
   graph.add_vertex(id, vtx);
   return true;
 }
-
-// Read a line from a file and creates a vertex
-bool vertex_loader_with_id_sparse(graph_type& graph, const std::string& fname,
-                   const std::string& line) {
-  if (line.empty()) return true;
-
-  vertex_data vtx;
-  size_t id = 0;
-  boost::char_separator<char> sep(" ");
-  boost::tokenizer<boost::char_separator<char> > tokens(line, sep);
-  bool first = true;
-  BOOST_FOREACH (const std::string& t, tokens) {
-    if(first){
-      id = (size_t)std::atoi(t.c_str());
-      first = false;
-    }else{
-      std::string::size_type pos = t.find(":");
-      if(pos > 0){
-        size_t id = (size_t)std::atoi(t.substr(0, pos).c_str());
-        double val = std::atof(t.substr(pos+1, t.length() - pos -1).c_str());
-        vtx.point_sparse.insert(std::make_pair<size_t, double>(id, val));
-      }
-    }
-  }
-  vtx.best_cluster = (size_t)(-1);
-  vtx.best_distance = std::numeric_limits<double>::infinity();
-  vtx.changed = false;
-  graph.add_vertex(id, vtx);
-  return true;
-}
-
-
 
 //call this when edge weight file is given.
 //each line should be [source id] [target id] [weight].
@@ -787,16 +586,14 @@ struct vertex_writer_with_id {
 
 
 int main(int argc, char** argv) {
-  std::cout << "Computes a K-means clustering of data.\n\n";
+  std::cout << "Performs Item-to-Item Based Collaborative FIltering.\n\n";
 
   graphlab::command_line_options clopts
-    ("K-means clustering. The input data file is provided by the "
+    ("Item-to-Item Based CF. The input data file is provided by the "
      "--data argument which is non-optional. The format of the data file is a "
      "collection of lines, where each line contains a comma or white-space "
-     "separated lost of numeric values representing a vector. Every line "
-     "must have the same number of values. The required --clusters=N "
-     "argument denotes the number of clusters to generate. To store the output "
-     "see the --output-cluster and --output-data arguments");
+     "separated list of numeric values representing a vector. Every line "
+     "must have the same number of values.");
 
   std::string datafile;
   std::string outcluster_file;
@@ -851,37 +648,29 @@ int main(int argc, char** argv) {
 
   graphlab::mpi_tools::init(argc, argv);
   graphlab::distributed_control dc;
+  
   // load graph
   graph_type graph(dc, clopts);
   NEXT_VID = (((graphlab::vertex_id_type)1 << 31) / dc.numprocs()) * dc.procid();
-  if(IS_SPARSE == true){
-    if(use_id){
-      graph.load(datafile, vertex_loader_with_id_sparse);
-    }else{
-      graph.load(datafile, vertex_loader_sparse);
-    }
-  }else{
+
     if(use_id){
       graph.load(datafile, vertex_loader_with_id);
     }else{
       graph.load(datafile, vertex_loader);
     }
-  }
+ 
   if(edgedata_file.size() > 0){
     graph.load(edgedata_file, edge_loader);
   }
+  
   graph.finalize();
   dc.cout() << "Number of datapoints: " << graph.num_vertices() << std::endl;
-
-  if (graph.num_vertices() < NUM_CLUSTERS) {
-    dc.cout() << "More clusters than datapoints! Cannot proceed" << std::endl;
-    return EXIT_FAILURE;
-  }
 
   dc.cout() << "Validating data...";
 
 
   CLUSTERS.resize(NUM_CLUSTERS);
+  
   // make sure all have the same array length
   if(IS_SPARSE == false){
     size_t max_p_size = graph.map_reduce_vertices<max_point_size_reducer>
