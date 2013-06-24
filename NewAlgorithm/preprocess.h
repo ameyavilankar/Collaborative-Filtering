@@ -11,7 +11,7 @@
 
 
 const int H = 1.0;
-const int NUM_FEATURES = 100;
+const int NUM_FEATURES = 1000;
 
 std::vector<std::vector<double> > getCosineMatrix(const std::vector<std::vector<double> >& ratingMatrix, std::map<long, int> userMap, std::vector<long> userVector);
 

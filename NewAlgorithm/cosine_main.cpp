@@ -105,14 +105,18 @@ int main()
 	if(errorVal != 0)
 		return errorVal;
 
-    cout<<"Before shuffling top NUM_FEATURES: \n";
+        cout<<"Before shuffling top NUM_FEATURES: \n";
 	for(int i = 0; i < NUM_FEATURES; i++)
 		cout<<userVector[i]<<" ";
 	cout<<endl;
 
 	// Randomly shuffle the userVector
-	getRandomAndClusterUsers(userVector, clusterUsers);
+	// getRandomAndClusterUsers(userVector, clusterUsers);
+
 	
+	// Randomly select the remaining number of users
+	vector<long >::iterator newBegin = random_unique(userVector.begin(), userVector.end(), NUM_FEATURES);
+
 	cout<<"After shuffling top NUM_FEATURES: \n";
 	for(int i = 0; i < NUM_FEATURES; i++)
 		cout<<userVector[i]<<" ";
