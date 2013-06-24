@@ -16,9 +16,6 @@ vector<vector<double> > getCosineMatrix(const vector<vector<double> >& ratingMat
 	// For each user in the matrix calculate the cosine distance with the NUM_FEATURES randomly selected users
 	for(int i = 0; i < ratingMatrix.size(); i++)
 	{
-
-		cout<<i<<"\n";
-
 		// This will hold the cosine distances for the current user
 		vector<double> distance(NUM_FEATURES + 1);
 
