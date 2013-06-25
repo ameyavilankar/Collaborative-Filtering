@@ -51,6 +51,7 @@ struct item
   {
     iarc << itemname << itemid;
   }
+
 };
 
 
@@ -115,6 +116,43 @@ struct score {
 typedef graphlab::distributed_graph<item, score> graph_type;
 
 graphlab::atomic<graphlab::vertex_id_type> NEXT_VID;
+
+class vertex_program:
+            public graphlab::ivertex_program<graph_type, double>,
+            public graphlab::IS_POD_TYPE {
+public:
+
+  // we are going to gather on all the edges
+  edge_dir_type gather_edges(icontext_type& context,
+                             const vertex_type& vertex) const
+  {
+    return graphlab::ALL_EDGES;
+  }
+
+  // for each in-edge gather the weighted sum of the edge.
+  double gather(icontext_type& context, const vertex_type& vertex,
+               edge_type& edge) const
+  {
+    return edge.source().data().pagerank / edge.source().num_out_edges();
+  }
+  
+  // Use the total rank of adjacent pages to update this page 
+  void apply(icontext_type& context, vertex_type& vertex,
+             const gather_type& total) {
+    double newval = total * 0.85 + 0.15;
+    vertex.data().pagerank = newval;
+  }
+  
+  // No scatter needed. Return NO_EDGES 
+  edge_dir_type scatter_edges(icontext_type& context,
+                              const vertex_type& vertex) const {
+    return graphlab::NO_EDGES;
+  }
+};
+
+
+
+
 
 // Read a line from a file and creates a vertex
 bool vertex_loader(graph_type& graph, const std::string& fname,
