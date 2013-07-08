@@ -1,6 +1,5 @@
 #include "main.h"
 #include "readMatrix.cpp"
-#include "canberra.cpp"
 #include "math.h"
 #include "preprocess.h"
 #include "preprocess.cpp"
@@ -18,6 +17,49 @@ using std::map;
 using std::ofstream;
 using std::make_pair;
 using std::pair;
+
+// Function used to determine if the current character is a colon or not
+inline bool isColon(char c)
+{
+	return c == ':'; 
+}
+
+// Funciton used to split2 the sentence into its individual parts
+vector<double> split2(const string& s)
+{
+	vector<string> returnString;
+
+	typedef string::size_type string_size;
+	string_size i = 0;
+
+	// invariant: we have processed characters `['original value of `i', `i)'
+	while (i != s.size()) 
+	{
+		// ignore leading blanks
+		// invariant: characters in range `['original `i', current `i)' are all spaces
+		while (i != s.size() && isColon(s[i]))
+			++i;
+
+		// find end of next word
+		string_size j = i;
+		// invariant: none of the characters in range `['original `j', current `j)' is a space
+		while (j != s.size() && !isColon(s[j]))
+			++j;
+
+		// if we found some nonwhitespace characters
+		if (i != j) 
+		{
+			// copy from `s' starting at `i' and taking `j' `\-' `i' chars
+			returnString.push_back(s.substr(i, j - i));
+			i = j;
+		}
+	}
+
+	std::vector<double> returnDouble;
+	std::transform(returnString.begin(), returnString.end(), std::back_inserter(returnDouble), getDouble);
+	return returnDouble;
+}
+
 
 bool compare_zeros(const pair<long, int>& one, const pair<long, int>& two)
 {
@@ -51,7 +93,7 @@ int getRatingMatrix(const char* filename, map<long, int>& userMap, map<long, int
 	    {
 			//cout<<count<<endl;
 	    	// Split the currentLine and only return the double parts
-	 		splitDouble = split(currentLine);
+	 		splitDouble = split2(currentLine);
 			
 			// Create a map from user_id to index the rating matrix
 			if(userMap.find(splitDouble[0]) == userMap.end())
@@ -113,13 +155,15 @@ int getRatingMatrix(const char* filename, map<long, int>& userMap, map<long, int
 	    // Keep on reading till their are no lines
 	    while (std::getline (myfile, currentLine)) 
 	    {
-	    //cout<<count<<endl;
-	    count++;
-	    // Split the currentLine and only return the double parts
-	    splitDouble = split(currentLine);
+		//cout<<count<<endl;
+		count++;
+		
+		// split2 the currentLine and only return the double parts
+		splitDouble = split2(currentLine);
+		
 		// Store the rating of the user for the corresponding movie.
- 		ratingMatrix[userMap[(long)splitDouble[0]]][movieMap[(long)splitDouble[1]]] = splitDouble[2];
-    }
+		ratingMatrix[userMap[(long)splitDouble[0]]][movieMap[(long)splitDouble[1]]] = splitDouble[2];
+	}
 	
 	cout<<"Finished Loading Matrix:"<<endl;
 	cout<<"Rating Matrix Size: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
@@ -195,7 +239,6 @@ int main()
 			distance[j]  = cosineSimilarity(vector<double>(ratingMatrix[i].begin(), ratingMatrix[i].end()), vector<double>(ratingMatrix[userMap[userVector[j]]].begin(), ratingMatrix[userMap[userVector[j]]].end()));
 		}
 		
-		cout<<"\n";
 		// Add the distance to the cosine Distance Matrix
 		cosineDistances.push_back(distance);
 	}

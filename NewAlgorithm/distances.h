@@ -1,3 +1,6 @@
+#ifndef DISTANCES_H
+#define DISTANCES_H
+
 #include <vector>
 #include <string>
 #include <iostream>
@@ -259,3 +262,5 @@ double slopeOneDistance(const std::vector<double>& one, const std::vector<double
 	
 	return sumDiff;
 }
+
+#endif
