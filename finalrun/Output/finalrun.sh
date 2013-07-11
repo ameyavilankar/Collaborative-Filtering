@@ -14,11 +14,11 @@ python readData.py >> kmeansinput.txt
 # Run the kmeans algorithm on the output of svd
 export PATH=$PATH:/usr/local/projects/graphlab/graphlabapi/release/toolkits/clustering
 
-for (( c=45; c<=65; c++ ))
-do
-	kmeans --data=kmeansinput.txt --clusters=c --output-clusters=cluster.txt --output-data=data.txt --id=1   
-done
+#for (( c=45; c<=65; c++ ))
+#do
+    kmeans --data=kmeansinput.txt --clusters=55 --output-clusters=cluster.txt --output-data=data.txt --id=1   
+#done
 
 # Run the checkMap and json file generating code on the output of kmeans
-mv data.txt_1_of_1 data.txt
+# mv data.txt_1_of_1 data.txt
 ./visualise_cosine.out
