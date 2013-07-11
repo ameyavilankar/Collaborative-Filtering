@@ -14,7 +14,7 @@ const int NUM_FEATURES = 100;
 const int NUM_EIGEN_VALUES = 100;
 
 // Number of singular values to consider (k-rank approximation SVD)
-const int NUM_SINGULAR_VALUES = 10;
+const int K_RANK = 10;
 
 // TODO: Add all parameters for SVD and KMEANS if doing it through code and not the shell script
 
