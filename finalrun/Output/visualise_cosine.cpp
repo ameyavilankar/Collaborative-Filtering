@@ -23,8 +23,6 @@ using std::min_element;
 using std::distance;
 using std::stringstream;
 
-double H = 2;
-
 // Used to get the map from the users to their assigned cluster
 int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, map<int, vector<long> >& clusterToUserMap)
 {

@@ -160,8 +160,6 @@ int main()
         return errorVal;
     cout<<"No. of users: "<<userToClusterMap.size()<<"\n";
     cout<<"No. of Clusters:"<<clusterToUserMap.size()<<"\n\n";
-    
-    
    
     cout<<"Geting the ratingMatrix...\n";
     vector<vector<double> > ratingMatrix;

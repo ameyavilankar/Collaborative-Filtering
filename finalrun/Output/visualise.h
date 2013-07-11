@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <fstream>
 #include <sstream>
+#include "constants.h"
 
 using std::sort;
 using std::map;

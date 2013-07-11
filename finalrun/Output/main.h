@@ -6,6 +6,7 @@
 
 #include "readMatrix.h"
 #include "distances.h"
+#include "constants.h"
 #include <sstream>
 
 template<class T> std::string to_string(T n)

@@ -8,9 +8,8 @@
 #include <map>
 #include <iostream>
 #include <math.h>
+#include "constants.h"
 
-const double H = 2;
-const int NUM_FEATURES = 100;
 
 std::vector<std::vector<double> > getCosineMatrix(const std::vector<std::vector<double> >& ratingMatrix, std::map<long, int> userMap, std::vector<long> userVector);
 
