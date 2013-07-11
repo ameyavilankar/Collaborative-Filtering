@@ -459,6 +459,29 @@ void saveLinks(map<int, vector<long> >& clusterToUserMap, map<int, map<int, int>
 	}
 }
 
+void clusterQuality(map<long, int> >& clusterUserDistances)
+{
+	map<int, double> avgClusterDistances;
+	
+	// for each cluster, calculate the average distance of all the users in the cluster t	
+	for(map<int, map<long, int> >::const_iterator cluster_it = clusterUserDistances.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
+	{
+		for(map<long, int>::const_iterator user_it = cluster_it->second.begin(); user_it != cluster_it->second.end(); user_it++)
+			avgClusterDistances[cluster_it->first] += user_it->second;
+
+		avgClusterDistances[cluster_it->first] /= cluster_it->second.size();	
+	}
+
+	double overallavg = 0.0;
+	for(map<int, double>::const_iterator it = avgClusterDistances.begin(); it != avgClusterDistances.end(); it++)
+	{
+		cout << "Cluster: " << it->first << ", " << "Avg distance" << it->second << "\n";
+		overallavg += it->second;
+	}
+		
+	overallavg /= avgClusterDistances;
+	cout << "Overall Average: " << overallavg << "\n";
+}
 
 int main()
 {
@@ -517,6 +540,8 @@ int main()
 	cout<<"Saving the cluster centers to the file...\n";
 	saveClusterCenters(clusterCenterUser);
 
+	cout << "Printing the cluster quality: \n";
+	clusterQuality(clusterUserDistances);
 
 	return 0;
 
