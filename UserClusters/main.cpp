@@ -73,6 +73,35 @@ int main()
     // Replace by unordered_map or unordered_set
     map<int, Cluster> clusterMap;
     map<int, long> clusterCenterUser;  // TODO: read the map from file
+    
+    // Load the Cluster Centers
+    {
+        // Open the file for reading
+        ifstream myfile("clusterUsers.txt");
+
+        //Always test the file open.
+        if(!myfile) 
+        {
+          cout<<"Error opening output file"<<endl;
+          return -1;
+        }
+        
+        vector<double> splitDouble;
+        string currentLine;
+
+        // Read till the end of the file
+        while (std::getline (myfile, currentLine)) 
+        {
+            // Split the currentLine and only return the double parts
+            splitDouble = split(currentLine, isSpace);
+            
+            // map from the user id to the corresponding cluster
+            clusterCenterUser[splitDouble[0]] = splitDouble[1];
+        }    
+    }
+    
+
+    // Temp variables
     vector<long> userVector;
     map<long, User> clusterUserMap;
 
