@@ -12,9 +12,10 @@ using std::vector;
 using std::string;
 using std::istream_iterator;
 using std::ostringstream;
+using Eigen::MatrixXd;
 
 // Read only the top K_RANK singular values into the singularMatrix
-int readSingularValues(vector<vector<double> >& singularMatrix, const string& filename = "Outputsingular_values")
+int readSingularValues(MatrixXd& singularMatrix, const string& filename = "Outputsingular_values")
 {
     // Load the singular Values and create the singular matrix
     ifstream infile;
@@ -36,14 +37,14 @@ int readSingularValues(vector<vector<double> >& singularMatrix, const string& fi
     int count = 0;
     while(infile >> temp && count <= K_RANK)
     {
-        singularMatrix[count][count] = temp;
+        singularMatrix(count, count) = temp;
         count++;
     }
 
     infile.clear();
     infile.close();
     
-    cout << "Dimensions of the singular Matrix: " << singularMatrix.size() << ", " << singularMatrix[0].size() << "\n";
+    cout << "Dimensions of the singular Matrix: " << singularMatrix.rows() << singularMatrix.cols() << "\n";
     
 }
 
@@ -68,11 +69,12 @@ int getNumberLines(const string& filename = "OutputU.0_1_of_1")
     unsigned line_count = std::count(istream_iterator<char>(infile), istream_iterator<char>(), '\n');
 
     cout << "Lines: " << line_count << "\n";
+
     return line_count;
 }
 
 // Read the uMatrix and the vMatrix from file
-int readMatrices(vector<vector<double> >& uMatrix, vector<vector<double> >& vMatrix)
+int readMatrices(MatrixXd& uMatrix, MatrixXd& vMatrix)
 {
     double temp = 0;
     int count = 0;
@@ -85,11 +87,11 @@ int readMatrices(vector<vector<double> >& uMatrix, vector<vector<double> >& vMat
 
         count = 0;
         while(infileU >> temp)
-            uMatrix[count++][i] = temp;
+            uMatrix(count++, i) = temp;
 
         count = 0;
         while(infileV >> temp)
-            vMatrix[count++][i] = temp;
+            vMatrix(count++, i) = temp;
 
         infileU.close();
         infileV.close();
@@ -97,52 +99,61 @@ int readMatrices(vector<vector<double> >& uMatrix, vector<vector<double> >& vMat
 
 }
 
-void calculateOutput(vector<vector<double> >& uMatrix, vector<vector<double> >& vMatrix, vector<vector<double> >& singularMatrix, vector<vector<double> >& output)
+void calculateOutput(MatrixXd& uMatrix, MatrixXd& vMatrix, MatrixXd& singularMatrix, MatrixXd& output)
 {
-    // TODO
+    // Calculate the output
+    output = (uMatrix.dot(singularMatrix)).dot(vMatrix.transpose());
 }
 
-void saveOutput(vector<vector<double> >& output, const string& filename = "kmeansinput.txt")
+int saveOutput(MatrixXd& output, const string& filename = "kmeansinput.txt")
 {
     // Save the Output result to file.
     ofstream outfile;
     outfile.open(filename.c_str());
-
-    for(int i = 0; i < output.size(); ++i)
-    {
-        for(int j = 0; j < output[i].size(); ++j)
-                outfile << output[i][j] << " ";
-        
-        outfile << "\n";
-    }
+    
+    if(outfile)
+        outfile << output;
+    else
+        return -1;
 
     outfile.close();
+    return 0;
 }
 
 int calculate_kmeans_input()
 {
     // create a matrix of vectors
-    vector<vector<double> > singularMatrix(NUM_EIGEN_VALUES, vector<double>(NUM_EIGEN_VALUES));
+    MatrixXd singularMatrix =  MatrixXd::Zero(NUM_EIGEN_VALUES, NUM_EIGEN_VALUES);
+    // vector<vector<double> > singularMatrix(NUM_EIGEN_VALUES, vector<double>(NUM_EIGEN_VALUES));
+    
     int errorVal = readSingularValues(singularMatrix, "Outputsingular_values");
+    if(errorVal != 0)
+        return errorVal;
 
     // Calculate the number of lines the UMatrix file to get the number of users
     int numberOfUsers = getNumberLines("OutputU.0_1_of_1");
+    if(numberOfUsers == -1)
+        return numberOfUsers;
 
     // Create the UMatrix and VMatrix
-    vector<vector<double> > uMatrix(numberOfUsers, vector<double>(NUM_EIGEN_VALUES));
-    vector<vector<double> > vMatrix(NUM_FEATURES, vector<double>(NUM_EIGEN_VALUES));
+    MatrixXd uMatrix = MatrixXd::Zero(numberOfUsers, NUM_EIGEN_VALUES);
+    MatrixXd vMatrix = MatrixXd::Zero(NUM_FEATURES, NUM_EIGEN_VALUES);
 
     // Read the UMatrix and the VMatrix
     errorVal = readMatrices(uMatrix, vMatrix);
+    if(errorVal != 0)
+        return errorVal;
 
     // Used to store the output result
-    vector<vector<double> > output(numberOfUsers, vector<double>(NUM_FEATURES));
+    MatrixXd output == MatrixXd::Zero(numberOfUsers, NUM_FEATURES);
 
     // Calculate the Output vector
     calculateOutput(uMatrix, vMatrix, singularMatrix, output);
 
     // Save the output file to be used by kmeans
-    saveOutput(output, "kmeansinput.txt");
+    errorVal = saveOutput(output, "kmeansinput.txt");
+    if(errorVal != 0)
+        return errorVal;
 
     return 0;
 }

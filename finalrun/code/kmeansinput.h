@@ -12,7 +12,9 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include <Eigen/Dense>
 
 // Calculates the input matrix to the kmeans step using the SVD Output Matrices and singualr values
 int calculate_kmeans_input();
+
 #endif
