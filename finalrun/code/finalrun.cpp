@@ -96,15 +96,19 @@ bool call_graph_laplacian(const std::string& mpi_args, const std::string& filena
 
 bool call_svd(const std::string& mpi_args, const std::string& filename,
     const std::string& svd_dir, const size_t num_clusters, const size_t rank,
-    const size_t num_data, const std::string& args)
+    const size_t rows, const size_t cols, const std::string& args)
 {
-
+    // To hold the entire function call
     std::stringstream strm;
+    
+    // Add only if running distributed using MPI
     if(mpi_args.length() > 0)
         strm << "mpiexec " << mpi_args << " ";
-    strm << svd_dir << "svd " + filename + ".glap";
-    strm << " --rows=" << num_data;
-    strm << " --cols=" << num_data;
+    
+    // Build the function call
+    strm << svd_dir << "svd " + filename /*+ ".glap"*/;
+    strm << " --rows=" << rows;
+    strm << " --cols=" << cols;
     strm << " --nsv=" << rank;
     strm << " --nv=" << rank;
     strm << " --max_iter=4";
@@ -114,9 +118,13 @@ bool call_svd(const std::string& mpi_args, const std::string& filename,
     strm << " --id=1";
     strm << " --prediction=" << filename + ".";
     strm << " " << args;
+
+    // Call the function using the built string
     std::cout << "CALLING >" << strm.str() << std::endl;
     int sys_ret = system(strm.str().c_str());
     
+
+    // Check if failed
     if (sys_ret != 0)
     {
         std::cout << "system call fails" << std::endl;
@@ -152,23 +160,31 @@ bool call_eigen_vector_normalization(const std::string& mpi_args,
     return true;
 }
 
+
 bool call_kmeans(const std::string& mpi_args, const std::string& filename,
     const std::string& kmeans_dir, const size_t num_clusters,
     const std::string& args)
 {
-    //call svd
+    // To hold the entire funtion call
     std::stringstream strm;
+
+    // Add only if to be run distributed using MPI
     if(mpi_args.length() > 0)
         strm << "mpiexec " << mpi_args << " ";
+
+    // Build up the function call
     strm << kmeans_dir << "kmeans ";
-    strm << " --data " << filename << ".compressed";
+    strm << " --data " << filename /*<< ".compressed"*/;
     strm << " --clusters " << num_clusters;
     strm << " --output-data " << filename << ".result";
     strm << " --id=1";
     strm << " " << args;
+
+    // Call the function using the built string
     std::cout << "CALLING >" << strm.str() << std::endl;
     int sys_ret = system(strm.str().c_str());
     
+    // Check if failed
     if (sys_ret != 0)
     {
         std::cout << "system call fails" << std::endl;
@@ -205,18 +221,70 @@ int get_lanczos_rank(const size_t num_clusters, const size_t num_data)
     return rank;
 }
 
+
+// Get the number of lines from the file to get the number of users
+int countLines(const string& filename = "Output")
+{
+    // Load the singular Values and create the singular matrix
+    ifstream infile;
+    infile.open(filename.c_str());
+
+    //Always test the file open.
+    if(!infile) 
+    {
+        cout<<"Error opening output file"<<endl;
+        return -1;
+    }
+
+    // new lines will be skipped unless we stop it from happening:    
+    infile.unsetf(std::ios_base::skipws);
+
+    // count the newlines with an algorithm specialized for counting:
+    unsigned line_count = std::count(istream_iterator<char>(infile), istream_iterator<char>(), '\n');
+
+    cout << "Lines: " << line_count << "\n";
+
+    return line_count;
+}
+
+// Get the number of lines from the file to get the number of users
+int countDimension(const string& filename = "Output")
+{
+    // Load the singular Values and create the singular matrix
+    ifstream infile;
+    infile.open(filename.c_str());
+
+    //Always test the file open.
+    if(!infile) 
+    {
+        cout<<"Error opening output file"<<endl;
+        return -1;
+    }
+
+    string firstline;
+    std::getline(infile, firstline);
+    // Split the currentLine and only return the double parts
+    std::vector<double> splitDouble = split(currentLine);
+    cout << "Lines: " << splitDouble.size() << "\n";
+
+    return splitDouble.size();
+}
+
+
 int main(int argc, char** argv)
 {
-    std::cout << "Graph partitioning (normalized cut)\n\n";
+    std::cout << "Graph partitioning using Dimensionality Reduction and Clustering...\n\n";
 
     std::string graph_dir;
     std::string format = "adj";
     std::string svd_dir = "../collaborative_filtering/";
     std::string kmeans_dir = "../clustering/";
     std::string mpi_args;
+
     size_t num_partitions = 2;
     bool normalized_cut = true;
     bool ratio_cut = false;
+    
     //parse command line
     graphlab::command_line_options clopts("Graph partitioning (normalized cut)");
     clopts.attach_option("graph", graph_dir, "The graph file. This is not optional. Vertex ids must start from 1 "
@@ -228,11 +296,8 @@ int main(int argc, char** argv)
     clopts.attach_option("kmeans-dir", kmeans_dir, "Path to the directory of Graphlab kmeans");
     clopts.attach_option("mpi-args", mpi_args, "If set, will execute mipexec with the given arguments. "
     "For example, --mpi-args=\"-n [N machines] --hostfile [host file]\"");
-    //  clopts.attach_option("normalized-cut", normalized_cut,
-    //                       "do normalized cut");
-    //  clopts.attach_option("ratio-cut", ratio_cut,
-    //                       "do ratio cut");
     
+
     if (!clopts.parse(argc, argv))
         return EXIT_FAILURE;
     
@@ -242,13 +307,6 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
     
-    //  if(normalized_cut == true && ratio_cut == true){
-    //    std::cout << "Both normalized-cut and ratio-cut are true. Ratio cut is selected.\n";
-    //    normalized_cut = false;
-    //  }else if(normalized_cut == false && ratio_cut == false){
-    //    std::cout << "Both normalized-cut and ratio-cut are false. Ratio cut is selected.\n";
-    //    ratio_cut = true;
-    //  }
     std::vector<std::string> remove_opts;
     remove_opts.push_back("--graph");
     remove_opts.push_back("--format");
@@ -256,36 +314,40 @@ int main(int argc, char** argv)
     remove_opts.push_back("--kmeans-dir");
     remove_opts.push_back("--partitions");
     remove_opts.push_back("--mpi-args");
-    //  remove_opts.push_back("--normalized-cut");
-    //  remove_opts.push_back("--ratio-cut");
     std::string other_args = get_arg_str_without(argc, argv, remove_opts);
 
-    //construct graph laplacian 
-    if (call_graph_laplacian(mpi_args, graph_dir, format, normalized_cut, ratio_cut, other_args) == false)
-        return EXIT_FAILURE;
+    // Build the cosine Matrix and save it to file name "Output"
+    int errorVal = generate_cosine_matrix();
+    if(errorVal != 0)
+        return errorVal;
 
-    //eigen value decomposition
-    //read number of data
-    size_t num_data = 0;
-    const std::string datanum_filename = graph_dir + ".datanum";
-    std::ifstream ifs(datanum_filename.c_str());
-    if (!ifs)
-    {
-        std::cout << "can't read number of data." << std::endl;
-        return false;
-    }
+    // Count the number of lines(users)
+    size_t num_data = countLines(graph_dir + "Output");
+    if(num_data < 0)
+        return num_data;
     
-    ifs >> num_data;
+    // Count the number of columns(movies)
+    size_t num_cols = countDimension(graph_dir + "Output");
+    if(num_cols < 0)
+        return num_cols;
+
     //determine the rank of Lanczos method
     size_t rank = get_lanczos_rank(num_partitions, num_data);
-    if (call_svd(mpi_args, graph_dir, svd_dir, num_partitions, rank, num_data, other_args) == false)
+
+    // Run SVD on the matrix stored in Output
+    if (call_svd(mpi_args, graph_dir + "Output", svd_dir, num_partitions, rank, num_data, num_cols, other_args) == false)
         return EXIT_FAILURE;
 
-    if (call_eigen_vector_normalization(mpi_args, graph_dir, num_partitions, rank, num_data, other_args) == false)
-        return EXIT_FAILURE;
+    // Use the SVD Output to Calculate the k-rank approximation and store it in kmeansinput.txt
+    errorVal = calculate_kmeans_input();
+    if(errorVal != 0)
+        return errorVal;
+
+    // if (call_eigen_vector_normalization(mpi_args, graph_dir, num_partitions, rank, num_data, other_args) == false)
+    //     return EXIT_FAILURE;
 
     //kmeans
-    if (call_kmeans(mpi_args, graph_dir, kmeans_dir, num_partitions, other_args) == false)
+    if (call_kmeans(mpi_args, graph_dir, kmeans_dir + "kmeansinput.txt", num_partitions, other_args) == false)
         return EXIT_FAILURE;
     
     return EXIT_SUCCESS;
