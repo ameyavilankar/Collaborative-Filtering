@@ -146,14 +146,17 @@ int main()
 		return errorVal;
 	
 	map<long, map<long, double> > graph;
-
+	
+	cout << "Calculating the Graph...\n";
 	for(map<long, map<long, double> >::const_iterator user_it = ratingMap.begin(); user_it != ratingMap.end(); user_it++)
 	{
-		map<long, map<long, double> >::const_iterator other_user_it;
+		//cout << "Calculating edges for User: " << user_it->first << "\n";
+		map<long, map<long, double> >::const_iterator other_user_it = user_it;
 		other_user_it++;
 
 		if(user_it == ratingMap.end() || other_user_it == ratingMap.end())
 			continue;
+		
 
 		while(other_user_it != ratingMap.end()) 
 		{
@@ -162,14 +165,23 @@ int main()
 				{
 					// Both users have a commonly rated movie
 					double cosine = cosineSimilarity(ratingMap[user_it->first], ratingMap[other_user_it->first]);
-					graph[user_it->first][other_user_it->first] = cosine;
-					graph[other_user_it->first][user_it->first] = cosine;
+					
+					if(graph.find(other_user_it->first) != graph.end())
+					    if(graph[other_user_it->first].find(user_it->first) != graph[other_user_it->first].end())
+					    {
+						// do nothing: edge already exists
+						cout << "Edge Already exists.\n";
+					    }
+					    else
+						graph[user_it->first][other_user_it->first] = cosine;
 					break;
 				}
 
 			other_user_it++;
-		}		
+		}
 	}
+	
+	cout << "Number of vertices in graph:" << graph.size() << "\n";
 
 	ofstream outfile;
 	outfile.open("graph.txt");
@@ -178,37 +190,8 @@ int main()
 
 	for(map<long, map<long, double> >::const_iterator user_it = graph.begin(); user_it != graph.end(); user_it++)
 		for(map<long, double>::const_iterator other_user_it = user_it->second.begin(); other_user_it != user_it->second.end(); other_user_it++)
-			outfile << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
-
+		//	outfile << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
+		cout  << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
 	outfile.close();
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
