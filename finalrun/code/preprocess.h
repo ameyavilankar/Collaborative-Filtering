@@ -9,7 +9,7 @@
 #include <iostream>
 #include <math.h>
 #include "constants.h"
-
+#include "distances.h"
 
 std::vector<std::vector<double> > getCosineMatrix(const std::vector<std::vector<double> >& ratingMatrix, std::map<long, int> userMap, std::vector<long> userVector);
 

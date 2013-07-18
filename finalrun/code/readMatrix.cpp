@@ -11,17 +11,6 @@ using std::ifstream;
 using std::map;
 using std::ofstream;
 
-// Function used to determine if the current character is a colon or not
-inline bool isSpace(char c)
-{
-	return iswspace(c);
-}
-
-// Convert the string to its double equivalent
-double getDouble(std::string toConvert)
-{
-	return atof(toConvert.c_str());
-}
 
 // Funciton used to split the sentence into its individual parts
 vector<double> split(const string& s)
@@ -142,9 +131,6 @@ int getRatingMatrix(const char* filename, vector<vector<double> >& ratingMatrix)
 
 	cout<<"Maximum Number of Users: "<<ratingMatrix.size()<<endl;
 	cout<<"Maximum Number of Movies:"<<ratingMatrix[0].size()<<endl;
-
-	cout<<"Rating Matrix Size: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
-	
 	/*
 	for(int i = 0; i < ratingMatrix.size(); i++)
     {	
@@ -158,38 +144,6 @@ int getRatingMatrix(const char* filename, vector<vector<double> >& ratingMatrix)
 	return 0; 
 }
 
-
-template<class fwditer>fwditer random_unique(fwditer begin, fwditer end, size_t num_random)
-{
-	// Find the Number of Elements between begin and end
-	size_t left = std::distance(begin, end);
-	
-	if(left < num_random || num_random < 0)
-	{
-		cout<<"Cannot generate enough Random Variables."<<endl;
-		return begin;
-	}
-	
-	// Seed for different random number everytime
-	srand(time(0));
-
-	// While we do not have num_random numbers
-	while (num_random--)
-	{
-		// Set forwarditerator to the current begin, which is the end of the unique
-		fwditer r = begin;
-		
-		// Advance the iterator randomly between begin() and end()
-		std::advance(r, rand()%left);
-
-		// Swap with begin and update the begin and left values
-		std::swap(*begin, *r);
-		++begin;
-		 --left;
-	}
-	
-	return begin;
-}
 
 /*
 int main()

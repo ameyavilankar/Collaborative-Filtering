@@ -483,7 +483,7 @@ void clusterQuality(map<int, map<long, int> > clusterUserDistances)
 	cout << "Overall Average: " << overallavg << "\n";
 }
 
-int visualise()
+int visualise_cosine()
 {
 	// STEP 1: Read the clusters from the data.txt file and 
 	// Create a map from every user to its cluster number 
