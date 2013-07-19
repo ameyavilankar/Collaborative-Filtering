@@ -150,7 +150,7 @@ int main()
 	cout << "Calculating the Graph...\n";
 	for(map<long, map<long, double> >::const_iterator user_it = ratingMap.begin(); user_it != ratingMap.end(); user_it++)
 	{
-		//cout << "Calculating edges for User: " << user_it->first << "\n";
+		cout << "Calculating edges for User: " << user_it->first << "\n";
 		map<long, map<long, double> >::const_iterator other_user_it = user_it;
 		other_user_it++;
 
@@ -166,14 +166,9 @@ int main()
 					// Both users have a commonly rated movie
 					double cosine = cosineSimilarity(ratingMap[user_it->first], ratingMap[other_user_it->first]);
 					
-					if(graph.find(other_user_it->first) != graph.end())
-					    if(graph[other_user_it->first].find(user_it->first) != graph[other_user_it->first].end())
-					    {
-						// do nothing: edge already exists
-						cout << "Edge Already exists.\n";
-					    }
-					    else
-						graph[user_it->first][other_user_it->first] = cosine;
+					if(user_it->first < other_user_it->first)
+					    graph[user_it->first][other_user_it->first] = cosine;
+				
 					break;
 				}
 
