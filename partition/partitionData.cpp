@@ -150,7 +150,7 @@ int main()
 	cout << "Calculating the Graph...\n";
 	for(map<long, map<long, double> >::const_iterator user_it = ratingMap.begin(); user_it != ratingMap.end(); user_it++)
 	{
-		cout << "Calculating edges for User: " << user_it->first << "\n";
+		//cout << "Calculating edges for User: " << user_it->first << "\n";
 		map<long, map<long, double> >::const_iterator other_user_it = user_it;
 		other_user_it++;
 
@@ -185,8 +185,7 @@ int main()
 
 	for(map<long, map<long, double> >::const_iterator user_it = graph.begin(); user_it != graph.end(); user_it++)
 		for(map<long, double>::const_iterator other_user_it = user_it->second.begin(); other_user_it != user_it->second.end(); other_user_it++)
-		//	outfile << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
-		cout  << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
+			outfile << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
 	outfile.close();
 
 }
