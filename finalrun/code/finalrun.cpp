@@ -79,21 +79,22 @@ bool call_graph_laplacian(const std::string& mpi_args, const std::string& filena
     strm << "./graph_laplacian ";
     strm << " --graph=" << filename;
     strm << " --format=" << format;
-    //  strm << " --normalized-cut=" << normalized_cut;
-    //  strm << " --ratio-cut=" << ratio_cut;
+    
     strm << " " << args;
     std::cout << "CALLING >" << strm.str() << std::endl;
     int sys_ret = system(strm.str().c_str());
     
     if (sys_ret != 0)
     {
-        std::cout << "system call fails" << std::endl;
+        std::cout << "System call fails" << std::endl;
         return false;
     }
 
     return true;
 }
 
+
+// Uses a system to call the svd code in graphlab collaborative filtering toolkit
 bool call_svd(const std::string& mpi_args, const std::string& filename,
     const std::string& svd_dir, const size_t num_clusters, const size_t rank,
     const size_t rows, const size_t cols, const std::string& args)
@@ -111,7 +112,7 @@ bool call_svd(const std::string& mpi_args, const std::string& filename,
     strm << " --cols=" << cols;
     strm << " --nsv=" << rank;
     strm << " --nv=" << rank;
-    strm << " --max_iter=4";
+    strm << " --max_iter=4" /* << rank - 1 */;
     strm << " --quiet=1";
     strm << " --save_vectors=1";
     strm << " --ortho_repeats=3";
@@ -133,6 +134,7 @@ bool call_svd(const std::string& mpi_args, const std::string& filename,
 
     return true;
 }
+
 
 bool call_eigen_vector_normalization(const std::string& mpi_args,
     const std::string& filename, const size_t num_clusters, const size_t rank,

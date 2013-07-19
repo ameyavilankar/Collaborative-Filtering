@@ -118,7 +118,7 @@ struct vertex_data
 	// Constructor
 	vertex_data(int id = 0, rating_type avg = 0.0): data_id(id), num_updates(0.0), average_rating(avg) {}
 
-	// Functions to make vertex serialisable
+	// Functions to make vertex serializable
 	void save(graphlab::oarchive& arc) const
 	{
 		arc << data_id << num_updates << average_rating;
@@ -144,21 +144,25 @@ struct edge_data
 	// To hold the list of rated items
 	rated_items_type rated_items;
 
+	// To hold the list of similar items
+	rated_items_type similar_items;
+
 	// Constructor
-	edge_data(rating_type rat = 0.0): rating(rat), rated_items() {}
+	edge_data(rating_type rat = 0.0): rating(rat), rated_items(), similar_items() {}
 
 	// Functions to make edge_data serializable
 	void save(graphlab::oarchive& arc)
 	{
 		// TODO rated_items saving
-		arc << rating;
+		arc << rating /* << rated_items << similar_items*/;
 	}
 
 	void load(graphlab::iarchive& arc)
 	{
 		// TODO rated_items loading
-		iarc >> rating;
+		iarc >> rating /* >> rated_items >> similar_items*/;
 	}
+
 }; // End of the edge_data class
 
 
@@ -272,33 +276,33 @@ struct gather_type
 	rating_type rating;
 
 	// This will be stored on the edge when we run scatter on the user
-	rated_items_type rated_items;
+	rated_items_type items;
 
 	// Constructor: Used to create using rating and an empty vector
-	gather_type(rating_type rat = 0.0): rating(rat), rated_items() {}
+	gather_type(rating_type rat = 0.0, rated_items_type ri = rated_items_type()): rating(rat), items() {}
 
 	// Constructor: Used to create using rating and rated_items map containing only
 	gather_type(rating_type rat, item_id id): rating(rat)
 	{
-		rated_items[id] = rating;
+		items[id] = rating;
 	}
 
 	// Functions to make gather_type serialisable
 	void save(graphlab::oarchive& arc)
 	{
-		arc << rating << rated_items;
+		arc << rating << items;
 	}
 
 	void load(graphlab::ioarchive& arc)
 	{
-		arc >> rating >> rated_items;
+		arc >> rating >> items;
 	}
 
 	// Used to sum up in the gather step
 	gather_type& operator+=(const gather_type& right)
 	{
 		this->rating += right.rating;
-		this->rated_items += right.rated_items;
+		this->items += right.items;
 
 		return *this; 
 	}
@@ -308,8 +312,6 @@ struct gather_type
 class user_vertex_program:
 	public graphlab::ivertex_program<graph_type, gather_type>
 {
-	rated_items_type rated_items;
-
 	/* \brief Gather on all the IN_EDGES */
 	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
 	{
@@ -344,7 +346,7 @@ class user_vertex_program:
 		vdata.average_rating = total.rating/num_rated_items;
 
 		// Save the list of the rated items for the scatter step
-		rated_items = total.rated_items;
+		rated_items = total.items;
 	}
 
 	/* \brief Once we find the map of rated items in the apply step,
@@ -378,53 +380,95 @@ class user_vertex_program:
 };
 
 
+class item_vertex_program:
+	public graphlab::ivertex_program<graph_type, gather_type>
+{
+	/* \brief Gather on all the IN_EDGES */
+	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
+	{
+		return graphlab::OUT_EDGES;
+	}
+
+	/* \brief Return the gather_type structure that is made up of the rating on 
+	* the edge and the similar_items map that contains all the items rated by the
+	* user on the other vertex of the edge.
+	*/
+	gather_type gather_type(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
+	{
+		return gather_type(edge.data().rating, edge.data().rated_items);
+	}
+
+	/**
+   	* \brief Calculate the average of all the ratings on the IN_EDGES.
+   	* Also aggregate the list of items rated by the user.
+   	*/
+	void apply(icontext_type& context, vertex_type& vertex, const gather_type& total)
+	{
+		// Get the number of rated items by the users
+		const size_t num_users_rated = vertex.num_out_edges();
+		ASSERT_GT(num_users_rated, 0);
+
+		// Get a reference to the vertex data
+		vertex_data& vdata = vertex.data();
+
+		// Increment the num_updates to the vertex by 1
+		vdata.nupdates++;
+
+		// Calculate and set the average user rating for the vertex
+		vdata.average_rating = total.rating/num_users_rated;
+
+		// Save the list of the rated items for the scatter step
+		rated_items = total.items;
+	}
+
+	/* \brief Once we find the map of rated items in the apply step,
+	* propogate the list on all of the edges so that it can be used by
+	* the items on the other end of the edge.
+	*/
+	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const
+	{
+    	return graphlab::OUT_EDGES;
+  	}
+
+  	/* \brief Save the map of rated items on each edge so that it can be used by
+  	* the item on the other side of the edge.
+  	*/
+  	void scatter(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
+  	{
+  		edge.data().similar_items = similar_items;
+  	}
 
 
+  	// Functions to make the class serializable
+  	void save(graphlab::oarchive& arc)
+  	{
+  		arc << similar_items;
+  	}
 
+  	void load(graphlab::iarchive arc)
+  	{
+  		arc >> similar_items;
+  	}
+};
 
+// TODO: Define a different gather type that will contain all the totals and the similarity score.
+// Refer the CF sequential code.
+class get_recommendation_program:
+	public graphlab::ivertex_program<graph_type, rated_items_type>
+{
+	/* \brief Gather on all the in_edges to get the union of the similar movies
+	* 	that should be considered for recommendation.
+	*/
+	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
+	{
+		return graphlab::IN_EDGES;
+	}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+	/* \brief returns the map of the similar items to the item on the other end of the 
+	* edge.
+	*/
+	rated_items_type gather_type(icontext_type& context, const vertex_data& vertex, edge_type& edge) const
+	{
+		return edge.data().similar_items;
+	}
+};
