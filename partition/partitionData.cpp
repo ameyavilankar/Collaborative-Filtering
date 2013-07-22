@@ -102,33 +102,41 @@ int getRatingMatrix(const char* filename, map<long, map<long, double> >& ratingM
 }
 
 
-double cosineSimilarity(map<long, double>& one, map<long, double>& two)
+double cosineSimilarity(map<long, double> one, map<long, double> two)
 {
 	map<long, double> oneCommon, twoCommon;
 
 	// find the common elements
 	for(map<long, double>::const_iterator one_it = one.begin(); one_it != one.end(); one_it++)
-		if(two.find(one_it->first) != two.end())
-		{
-			// Found common movie..add to oneCommon and twoCommon
-			cout << one_it->first << " ";
-			oneCommon[one_it->first] = one_it->second;
-			twoCommon[one_it->first] = two[one_it->first];
-		}
+	{
+		// if a movie is rated by one but not by two, add to twos map
+		if(two.find(one_it->first) == two.end())
+			two[one_it->first] = 0;
+	}
 
-	cout << "\n";
+	for(map<long, double>::const_iterator two_it = two.begin(); two_it != two.end(); two_it++)
+	{
+		// if a movie is rated by one but not by two, add to twos map
+		if(one.find(two_it->first) == one.end())
+			one[two_it->first] = 0;	
+	}
 
-	assert(oneCommon.size() == twoCommon.size());
+	cout << "One size: " << one.size() << ", Two size: " << two.size() << "\n";
+
+	for(map<long, double>::const_iterator it = one.begin(); it != one.end(); it++)
+		cout << it->second << ", " << two[it->first] << "\n";
+
+	assert(one.size() == two.size());
 
 	double oneSqrSum = 0.0;
 	double twoSqrSum = 0.0;
 	double prodSum = 0.0;
 	
-	for(map<long, double>::const_iterator one_it = oneCommon.begin(); one_it != oneCommon.end(); one_it++)
+	for(map<long, double>::const_iterator one_it = one.begin(); one_it != one.end(); one_it++)
 	{
-		prodSum += (one_it->second * twoCommon[one_it->first]);
+		prodSum += (one_it->second * two[one_it->first]);
 		oneSqrSum += one_it->second * one_it->second;
-		twoSqrSum += twoCommon[one_it->first] * twoCommon[one_it->first];
+		twoSqrSum += two[one_it->first] * two[one_it->first];
   	}
 	
 	double denominator = sqrt(oneSqrSum * twoSqrSum);
@@ -138,7 +146,6 @@ double cosineSimilarity(map<long, double>& one, map<long, double>& two)
 	else
 		return prodSum/denominator;
 }
-
 
 int main()
 {
@@ -203,11 +210,12 @@ int main()
 	one[1] = 1;
 	one[2] = 2;
 	one[3] = 3;
+	one[5] = 3;
 
 	two[1] = 3;
 	two[2] = 4;
 	two[3] = 5;
-	//two[] = 6;
+	two[4] = 4;
 
 	cout << "Cosine Similairty: " << cosineSimilarity(one, two) << "\n";
 
