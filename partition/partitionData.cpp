@@ -111,9 +111,12 @@ double cosineSimilarity(map<long, double>& one, map<long, double>& two)
 		if(two.find(one_it->first) != two.end())
 		{
 			// Found common movie..add to oneCommon and twoCommon
+			cout << one_it->first << " ";
 			oneCommon[one_it->first] = one_it->second;
 			twoCommon[one_it->first] = two[one_it->first];
 		}
+
+	cout << "\n";
 
 	assert(oneCommon.size() == twoCommon.size());
 
@@ -186,6 +189,28 @@ int main()
 	for(map<long, map<long, double> >::const_iterator user_it = graph.begin(); user_it != graph.end(); user_it++)
 		for(map<long, double>::const_iterator other_user_it = user_it->second.begin(); other_user_it != user_it->second.end(); other_user_it++)
 			outfile << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
+	
 	outfile.close();
 
 }
+
+/*
+int main()
+{
+
+	map<long, double> one, two;
+
+	one[1] = 1;
+	one[2] = 2;
+	one[3] = 3;
+
+	two[1] = 3;
+	two[2] = 4;
+	two[3] = 5;
+	//two[] = 6;
+
+	cout << "Cosine Similairty: " << cosineSimilarity(one, two) << "\n";
+
+	return 0;
+}
+*/
