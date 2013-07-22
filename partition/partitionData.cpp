@@ -104,8 +104,6 @@ int getRatingMatrix(const char* filename, map<long, map<long, double> >& ratingM
 
 double cosineSimilarity(map<long, double> one, map<long, double> two)
 {
-	map<long, double> oneCommon, twoCommon;
-
 	// find the common elements
 	for(map<long, double>::const_iterator one_it = one.begin(); one_it != one.end(); one_it++)
 	{
@@ -120,8 +118,6 @@ double cosineSimilarity(map<long, double> one, map<long, double> two)
 		if(one.find(two_it->first) == one.end())
 			one[two_it->first] = 0;	
 	}
-
-	cout << "One size: " << one.size() << ", Two size: " << two.size() << "\n";
 
 	for(map<long, double>::const_iterator it = one.begin(); it != one.end(); it++)
 		cout << it->second << ", " << two[it->first] << "\n";
