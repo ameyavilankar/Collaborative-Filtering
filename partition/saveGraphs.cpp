@@ -8,7 +8,10 @@
 #include <algorithm>
 #include <math.h>
 #include <sstream>
-#include "visualise.h"
+#include <sstream>
+#include <wctype.h>
+#include <fstream>
+#include <assert.h>
 
 using std::map;
 using std::vector;
@@ -22,6 +25,139 @@ using std::ofstream;
 using std::min_element;
 using std::distance;
 using std::stringstream;
+
+const double H = 1;
+
+template<class T> std::string to_string(T n)
+{
+    std::ostringstream os;
+    os << n;
+    return os.str();
+}
+
+inline bool isSpace(char c)
+{
+	return iswspace(c);
+}
+
+// Convert the string to its double equivalent
+inline double getDouble(std::string toConvert)
+{
+	return atof(toConvert.c_str());
+}
+
+// Funciton used to split the sentence into its individual parts
+vector<double> split(const string& s)
+{
+	vector<string> returnString;
+
+	typedef string::size_type string_size;
+	string_size i = 0;
+
+	// invariant: we have processed characters `['original value of `i', `i)'
+	while (i != s.size()) 
+	{
+		// ignore leading blanks
+		// invariant: characters in range `['original `i', current `i)' are all spaces
+		while (i != s.size() && isSpace(s[i]))
+			++i;
+
+		// find end of next word
+		string_size j = i;
+		// invariant: none of the characters in range `['original `j', current `j)' is a space
+		while (j != s.size() && !isSpace(s[j]))
+			++j;
+
+		// if we found some nonwhitespace characters
+		if (i != j) 
+		{
+			// copy from `s' starting at `i' and taking `j' `\-' `i' chars
+			returnString.push_back(s.substr(i, j - i));
+			i = j;
+		}
+	}
+
+	std::vector<double> returnDouble;
+	std::transform(returnString.begin(), returnString.end(), std::back_inserter(returnDouble), getDouble);
+
+	/*
+	 for(int i = 0; i < returnDouble.size(); i++)
+	 	cout<<returnDouble[i]<<" ";
+	 cout<<endl;
+	*/
+
+	return returnDouble;
+}
+
+// calculates the cosine similarity between two vectors
+double cosineSimilarity(const std::vector<double>& one, const std::vector<double>& two)
+{
+	assert(one.size() == two.size());
+	
+	double oneSqrSum = 0.0;
+	double twoSqrSum = 0.0;
+	double prodSum = 0.0;
+	
+	for(int i = 0; i < one.size(); i++)
+	{
+		prodSum += (one[i] * two[i]);
+		oneSqrSum += one[i] * one[i];
+		twoSqrSum += two[i] * two[i];
+  	}
+	
+	double denominator = sqrt(oneSqrSum * twoSqrSum);
+	
+	if(denominator == 0)
+		return 0;
+	else
+		return prodSum/denominator;
+}
+
+int calculateDistance(map<long, vector<double> >& ratingMatrix, long one, long two)
+{
+	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])/H) * 1000);
+}
+
+int getRatingMatrix(const char* filename, map< long, vector<double> >& ratingMatrix)
+{
+	ifstream myfile(filename);						 // Open the file for getting the input
+    std::string currentLine;						 // To hold the entire currentline
+    std::vector<double> splitDouble;				 // To hold the double values from the currentline
+	int userCount = 0;								 // To keep track of the number users
+
+    //Always test the file open.
+    if(!myfile) 
+    {
+      cout<<"Error opening output file"<<endl;
+      return -1;
+    }
+	
+	// Read till the end of the file
+	while (std::getline (myfile, currentLine)) 
+    {
+    	// Split the currentLine and only return the double parts
+ 		splitDouble = split(currentLine);
+			
+		// Add it to the ratingMatrix
+		//ratingMatrix.push_back(vector<double>(splitDouble.begin() + 1, splitDouble.end()));
+		ratingMatrix[splitDouble[0]] = vector<double>(splitDouble.begin() + 1, splitDouble.end());
+    }
+
+	//std::cout<<"Maximum Number of Users: "<<ratingMatrix.size()<<endl;
+	//std::cout<<"Maximum Number of Movies:"<<ratingMatrix[1].size()<<endl;
+
+	/*
+	for(int i = 0; i < ratingMatrix.size(); i++)
+    {	
+    	cout<<i<<" ";
+    	for(int j = 0; j < ratingMatrix[i].size(); j++)
+    		cout<<ratingMatrix[i][j]<<" ";
+    	cout<<endl;
+    }
+    */
+
+	return 0; 
+}
 
 // Used to get the map from the users to their assigned cluster
 int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, map<int, vector<long> >& clusterToUserMap)
@@ -43,11 +179,12 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, 
     while (std::getline (myfile, currentLine)) 
     {
     	// Split the currentLine and only return the double parts
-	splitDouble = split(currentLine);
-	    
-	// map from the user id to the corresponding cluster
-	userToClusterMap[splitDouble[0]] = splitDouble[1];
-	clusterToUserMap[splitDouble[1]].push_back(splitDouble[0]);
+		splitDouble = split(currentLine);
+		    
+		// map from the user id to the corresponding cluster
+		userToClusterMap[splitDouble[0]] = splitDouble[1];
+		clusterToUserMap[splitDouble[1]].push_back(splitDouble[0]);
+    
     }
 	
     /*
@@ -68,7 +205,7 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, 
 }
 
 // Used to get the graph from the graph file
-int getGraph(const char* filename, map<long map<long, double>& graph)
+int getGraph(const char* filename, map<long, map<long, double> >& graph)
 {
     // Open the file for reading
     ifstream myfile(filename);
@@ -234,86 +371,6 @@ map<int, map<int, int> > calculateClusterToClusterDistances(map<int, vector<doub
 	return clusterToClusterDistances;
 }
 
-int calculateDistance(map<long, vector<double> >& ratingMatrix, long one, long two)
-{
-	return (int)(exp(-cosineSimilarity(ratingMatrix[one], ratingMatrix[two])/H) * 1000);
-}
-
-void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, int> >& clusterUserDistances, map<long, vector<double> >& ratingMatrix, map<int, long>& clusterCenterUser)
-{
-	// define the constant strings
-	const string cluster = "cluster_";
-	const string nodes = ".nodes.json";
-	const string links = ".links.json";
-
-	for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
-	{
-		ofstream outfile1, outfile2;
-		outfile1.open((cluster + to_string(it->first) +  nodes).c_str());
-		outfile2.open((cluster + to_string(it->first) +  links).c_str());
-			
-		// save to file the first line of the file
-		outfile1<<"{\n\"nodes\":[\n";
-		outfile2<<"{\n\"links\":[\n";
-		
-		//print the first entry of the file
-		//outfile2<<"{\"source\":"
-		//outfile1<<"{\"name\":\""<<clusterToUserMap.begin()->second[0]<<"\",\"group\":"<<clusterToUserMap.begin()->first<<"}";
-		
-		int lineCount = 0;
-		map<long, int> userLineMap;
-		int linkCount = 0;
-		int group = 0;
-		string name;
-
-		for(int i = 0; i < it->second.size(); i++)
-		{
-			// Change color of the cluster center
-			if(clusterCenterUser[it->first] == it->second[i])
-			{
-				cout<<it->second[i]<<"\n";
-				group = it->first + 1;
-				name = "c" + to_string(it->second[i]);
-			}
-			else
-			{
-			    name = to_string(it->second[i]);
-			    group = it->first;
-			}
-
-			if(i == it->second.size() - 1)
-				outfile1<<"{\"name\":\""<<name<<"\",\"group\":"<<group<<"}\n";
-			else
-				outfile1<<"{\"name\":\""<<name<<"\",\"group\":"<<group<<"},\n";
-
-			// save the lineCount for the links.json file
-			userLineMap[it->second[i]] = lineCount++;
-		}	
-
-		for(int i = 0; i < it->second.size() - 1; i++)
-			for(int j = i + 1; j < it->second.size(); j++)
-			{
-				if(i == it->second.size() - 2)
-					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"}\n";
-				else
-					outfile2<<"{\"source\":"<<userLineMap[it->second[i]]<<",\"target\":"<<userLineMap[it->second[j]]<<",\"value\":"<<calculateDistance(ratingMatrix, it->second[i], it->second[j])<<"},\n";
-
-				linkCount++;
-			}	
-		
-		cout<<"LineCount: "<<lineCount<<"\n";
-		cout<<"LinkCount: "<<linkCount<<"\n\n";
-		
-		outfile1<<"]\n}";
-		outfile2<<"]\n}";
-		
-		// Close the two writing files
-		outfile1.close();
-		outfile2.close();	
-	}	
-	
-}
-
 void saveNodes(map<long, int>& userToClusterMap, map<int, long>& clusterCenterUser)
 {
 	// Save the Checkcluster to file TODO: Rewrite as a function
@@ -333,63 +390,49 @@ void saveNodes(map<long, int>& userToClusterMap, map<int, long>& clusterCenterUs
 	outfile.close();
 }
 
-void saveIndividualGraphs(map<long, map<long, double> >& graph, map<int, vector<long> >& clusterToUserMap, map<int, long>& clusterCenterUser, map<long, vector<double> >& ratingMatrix)
+void saveGraph(int clusterNo, map<long, map<long, double> >& graph)
+{
+	cout << "Cluster No.: " << clusterNo << ", Number of vertices in graph:" << graph.size() << "\n";
+
+	ofstream outfile;
+	string filename = "graph_" + to_string(clusterNo) + ".txt";
+
+	outfile.open(filename.c_str());
+
+	cout << "Saving the graph to file...\n";	
+
+	for(map<long, map<long, double> >::const_iterator user_it = graph.begin(); user_it != graph.end(); user_it++)
+		for(map<long, double>::const_iterator other_user_it = user_it->second.begin(); other_user_it != user_it->second.end(); other_user_it++)
+			outfile << user_it->first << " " << other_user_it->first << " " << other_user_it->second << "\n";
+	
+	outfile.close();
+
+}
+
+void saveIndividualGraphs(map<long, map<long, double> >& graph, map<int, map<long, double> >& clusterToUserMap, map<int, long>& clusterCenterUser, map<long, vector<double> >& ratingMatrix)
 {
 	// To hold the graph for each cluster
 	map<int, map<long, map<long, double> > > clusterGraphs;
 
-	for(map<int, vector<long> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
+	// 
+	for(map<int, map<long, double> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
 	{
-		for(int i = 0; i < cluster_it->second.size(); ++i)
+		for(map<long, double>::const_iterator user_it = cluster_it->second.begin(); user_it != cluster_it->second.end(); cluster_it++)
 		{
 			// Get the edges from the current user
-			map<long, double> edges = graph[cluster_it->second.size()];
+			map<long, double> edges = graph[user_it->first];
 
-			for(std::map<long, double>::const_iterator user_it = edges.begin(); user_it != edges.end(); user_it++)
-				// TODO
-		}
-	}
-
-}
-
-
-void saveLinks(map<int, vector<long> >& clusterToUserMap, map<int, map<int, int> >& clusterToClusterDistances, map<int, map<long, int> >& clusterUserDistances, map<int, long>& clusterCenterUser, map<long, vector<double> >& ratingMatrix)
-{
-	// define the constant strings
-	const string cluster = "cluster_";
-	const string links = "_links.txt";
-
-	{
-		ofstream outfile;
-		outfile.open("clusterLinks.txt");
-			
-		// Add all the lines from one cluster to another
-		for(map<int, map<int, int> >::const_iterator it = clusterToClusterDistances.begin(); it != clusterToClusterDistances.end(); it++)
-		{
-			for(map<int, int>::const_iterator second_it = it->second.begin(); second_it != it->second.end(); second_it++)
+			for(std::map<long, double>::const_iterator other_user_it = edges.begin(); other_user_it != edges.end(); other_user_it++)
 			{
-				outfile << clusterCenterUser[it->first] << ", " << clusterCenterUser[second_it->first] << ", " << clusterToClusterDistances[it->first][second_it->first] << "\n";
+				if(cluster_it->second.find(other_user_it->first) != cluster_it->second.end())
+					clusterGraphs[cluster_it->first][user_it->first][other_user_it->first] = calculateDistance(ratingMatrix, user_it->first, other_user_it->first);
 			}
 		}
-		
-		outfile.close();
 	}
-	
-	// Add links between all the users in one cluster
-	for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
-	{
-		ofstream outfile;
-		outfile.open((cluster + to_string(it->first) +  links).c_str());
-		
-		cout<<"For Cluster: "<<it->first<<"\n";
-		for(int i = 0; i < it->second.size() - 1; i++)
-			for(int j = i + 1; j < it->second.size(); j++)
-			{
-				outfile << it->second[i] << ", " << it->second[j] << ", " << calculateDistance(ratingMatrix, it->second[i], it->second[j]) << "\n";
-			}
 
-		outfile.close();
-	}
+	// Save the individual graphs
+	for(map<int, map<long, map<long, double> > >::iterator cluster_it = clusterGraphs.begin(); cluster_it != clusterGraphs.end(); cluster_it++)
+		saveGraph(cluster_it->first, cluster_it->second);
 }
 
 void clusterQuality(map<int, map<long, int> > clusterUserDistances)
@@ -416,7 +459,7 @@ void clusterQuality(map<int, map<long, int> > clusterUserDistances)
 	cout << "Overall Average: " << overallavg << "\n";
 }
 
-int visualise_cosine()
+int main()
 {
 	// STEP 1: Read the clusters from the data.txt file and 
 	// Create a map from every user to its cluster number 
@@ -429,18 +472,7 @@ int visualise_cosine()
 	cout<<"No. of users: "<<userToClusterMap.size()<<"\n";
 	cout<<"No. of Clusters:"<<clusterToUserMap.size()<<"\n\n";
 	
-	
-	/*
-	// STEP 2: Read the cluster centers from the "cluster.txt" file
-	vector<vector<double> > clusterCentersRDim;	
-	errorVal = getClusterCenters("cluster.txt", clusterCentersRDim);
-	if(errorVal != 0)
-		return errorVal;
-	cout<<"Cluster Dimensions: "<<clusterCentersRDim.size()<<", "<<clusterCentersRDim[0].size()<<endl;
-	*/
-
-	
-	// STEP 3: Read the ratingMatrix to get the user vectors
+	// STEP 2: Read the ratingMatrix to get the user vectors
 	cout<<"Geting the ratingMatrix...\n";
 	map<long, vector<double> > ratingMatrix;
 	errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
@@ -463,15 +495,20 @@ int visualise_cosine()
 
 	cout << "Getting the Graph...\n";
 	map<long, map<long, double> > graph;
-	errorVal = getGraph("graph.txt", map<long map<long, double>& graph)
+	errorVal = getGraph("graph.txt", graph);
 	if(errorVal != 0)
 		return errorVal;
 
-	cout << ""
+	cout << "Creating the clusterToUserMap...\n";
+	map<int, map<long, double> > clusterToUserMap2;
+	for(map<int, vector<long> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
+		for(int i = 0; i < cluster_it->second.size(); i++)
+		clusterToUserMap2[cluster_it->first][cluster_it->second[i]] = 1.0;
+
 	// Save the checkMap, JSON files and cluster center users to the file
 	cout<<"Saving the results...\n";
 	cout<<"Saving the cluster centers to the file...\n";
-	saveClusterCenters(clusterCenterUser);
+	saveIndividualGraphs(graph, clusterToUserMap2, clusterCenterUser, ratingMatrix);
 
 	return 0;
 
