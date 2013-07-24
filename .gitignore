@@ -15,3 +15,5 @@
 #.dat files and .txt files
 *.dat
 *.out
+*.txt
+
