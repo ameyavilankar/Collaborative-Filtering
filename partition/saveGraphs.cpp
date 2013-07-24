@@ -182,8 +182,8 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, 
 		splitDouble = split(currentLine);
 		    
 		// map from the user id to the corresponding cluster
-		userToClusterMap[splitDouble[0]] = splitDouble[1];
-		clusterToUserMap[splitDouble[1]].push_back(splitDouble[0]);
+		userToClusterMap[splitDouble[0] - 1] = splitDouble[1];
+		clusterToUserMap[splitDouble[1]].push_back(splitDouble[0] - 1);
     
     }
 	
@@ -193,13 +193,19 @@ int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, 
     {
 	cout<<it->first<<"\t"<<it->second<<endl;
     }
+    */
+
 
     cout<<"Cluster:\tUser\n";
-    for(map<int, long>::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
+    for(map<int, vector<long> >::const_iterator it = clusterToUserMap.begin(); it != clusterToUserMap.end(); it++)
     {
-	cout<<it->first<<"\t"<<it->second<<endl;
+	cout<<it->first<<"\n";
+	
+	for(int i = 0; i < it->second.size(); i++)
+	    cout << it->second[i] << " " ;
+	
+	cout << "\n";
     }
-    */
 
     return 0;
 }
@@ -414,20 +420,24 @@ void saveIndividualGraphs(map<long, map<long, double> >& graph, map<int, map<lon
 	// To hold the graph for each cluster
 	map<int, map<long, map<long, double> > > clusterGraphs;
 
-	// 
 	for(map<int, map<long, double> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
 	{
-		for(map<long, double>::const_iterator user_it = cluster_it->second.begin(); user_it != cluster_it->second.end(); cluster_it++)
+	    cout << "Calcualting for Cluster: " << cluster_it->first << "\n";
+	    for(map<long, double>::const_iterator user_it = cluster_it->second.begin(); user_it != cluster_it->second.end(); user_it++)
 		{
 			// Get the edges from the current user
 			map<long, double> edges = graph[user_it->first];
-
+			
+			cout << user_it->first << " ";
 			for(std::map<long, double>::const_iterator other_user_it = edges.begin(); other_user_it != edges.end(); other_user_it++)
 			{
+				
 				if(cluster_it->second.find(other_user_it->first) != cluster_it->second.end())
 					clusterGraphs[cluster_it->first][user_it->first][other_user_it->first] = calculateDistance(ratingMatrix, user_it->first, other_user_it->first);
 			}
 		}
+
+		cout << "\n";
 	}
 
 	// Save the individual graphs
@@ -466,7 +476,7 @@ int main()
 	cout<<"Geting the userToClusterMap and the clusterToUserMap...\n";
 	map<long, int> userToClusterMap;
 	map<int, vector<long> > clusterToUserMap;
-	int errorVal = getUserToClusterMap("data.txt_1_of_1", userToClusterMap, clusterToUserMap);
+	int errorVal = getUserToClusterMap("data.txt", userToClusterMap, clusterToUserMap);
 	if(errorVal != 0)
 		return errorVal;
 	cout<<"No. of users: "<<userToClusterMap.size()<<"\n";
@@ -504,10 +514,12 @@ int main()
 	for(map<int, vector<long> >::const_iterator cluster_it = clusterToUserMap.begin(); cluster_it != clusterToUserMap.end(); cluster_it++)
 		for(int i = 0; i < cluster_it->second.size(); i++)
 		clusterToUserMap2[cluster_it->first][cluster_it->second[i]] = 1.0;
+	
+	cout << "Save the Nodes to the file...\n";
+	saveNodes(userToClusterMap, clusterCenterUser);
 
 	// Save the checkMap, JSON files and cluster center users to the file
-	cout<<"Saving the results...\n";
-	cout<<"Saving the cluster centers to the file...\n";
+	cout<<"Saving the cluster graphs to the file...\n";
 	saveIndividualGraphs(graph, clusterToUserMap2, clusterCenterUser, ratingMatrix);
 
 	return 0;
