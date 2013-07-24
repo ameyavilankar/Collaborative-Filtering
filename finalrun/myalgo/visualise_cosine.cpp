@@ -400,8 +400,6 @@ void saveClusters(map<int, vector<long> >& clusterToUserMap, map<int, map<long, 
 
 void saveNodes(map<long, int>& userToClusterMap, map<long, int>& checkMap, map<int, long>& clusterCenterUser)
 {
-	int correct = 0;
-
 	// Save the Checkcluster to file TODO: Rewrite as a function
 	ofstream outfile;
 	outfile.open("Nodes.txt");
@@ -490,7 +488,7 @@ int visualise_cosine()
 	cout<<"Geting the userToClusterMap and the clusterToUserMap...\n";
 	map<long, int> userToClusterMap;
 	map<int, vector<long> > clusterToUserMap;
-	int errorVal = getUserToClusterMap("data.txt_1_of_1", userToClusterMap, clusterToUserMap);
+	int errorVal = getUserToClusterMap("kmeansinput.txt.result_1_of_1", userToClusterMap, clusterToUserMap);
 	if(errorVal != 0)
 		return errorVal;
 	cout<<"No. of users: "<<userToClusterMap.size()<<"\n";

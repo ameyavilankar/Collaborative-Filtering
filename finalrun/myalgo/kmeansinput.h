@@ -5,6 +5,7 @@
 // Author: Ameya Vilankar
 
 #include "constants.h"
+#include "readMatrix.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -15,6 +16,6 @@
 #include <Eigen/Dense>
 
 // Calculates the input matrix to the kmeans step using the SVD Output Matrices and singualr values
-int calculate_kmeans_input();
+int calculate_kmeans_input(size_t rank);
 
 #endif

@@ -30,7 +30,8 @@
 #include <string.h>
 
 #include <graphlab.hpp>
-
+#include "finalrun.h"
+ 
 //remove assigned options from arguments
 std::string get_arg_str_without(int argc, char** argv, std::vector<std::string> remove_opts)
 {
@@ -79,22 +80,21 @@ bool call_graph_laplacian(const std::string& mpi_args, const std::string& filena
     strm << "./graph_laplacian ";
     strm << " --graph=" << filename;
     strm << " --format=" << format;
-    
+    //  strm << " --normalized-cut=" << normalized_cut;
+    //  strm << " --ratio-cut=" << ratio_cut;
     strm << " " << args;
     std::cout << "CALLING >" << strm.str() << std::endl;
     int sys_ret = system(strm.str().c_str());
     
     if (sys_ret != 0)
     {
-        std::cout << "System call fails" << std::endl;
+        std::cout << "system call fails" << std::endl;
         return false;
     }
 
     return true;
 }
 
-
-// Uses a system to call the svd code in graphlab collaborative filtering toolkit
 bool call_svd(const std::string& mpi_args, const std::string& filename,
     const std::string& svd_dir, const size_t num_clusters, const size_t rank,
     const size_t rows, const size_t cols, const std::string& args)
@@ -112,7 +112,7 @@ bool call_svd(const std::string& mpi_args, const std::string& filename,
     strm << " --cols=" << cols;
     strm << " --nsv=" << rank;
     strm << " --nv=" << rank;
-    strm << " --max_iter=4" /* << rank - 1 */;
+    strm << " --max_iter=" << (rank - 1);
     strm << " --quiet=1";
     strm << " --save_vectors=1";
     strm << " --ortho_repeats=3";
@@ -134,7 +134,6 @@ bool call_svd(const std::string& mpi_args, const std::string& filename,
 
     return true;
 }
-
 
 bool call_eigen_vector_normalization(const std::string& mpi_args,
     const std::string& filename, const size_t num_clusters, const size_t rank,
@@ -176,9 +175,9 @@ bool call_kmeans(const std::string& mpi_args, const std::string& filename,
 
     // Build up the function call
     strm << kmeans_dir << "kmeans ";
-    strm << " --data " << filename /*<< ".compressed"*/;
-    strm << " --clusters " << num_clusters;
-    strm << " --output-data " << filename << ".result";
+    strm << " --data=" << filename /*<< ".compressed"*/;
+    strm << " --clusters=" << num_clusters;
+    strm << " --output-data=" << filename << ".result";
     strm << " --id=1";
     strm << " " << args;
 
@@ -225,7 +224,7 @@ int get_lanczos_rank(const size_t num_clusters, const size_t num_data)
 
 
 // Get the number of lines from the file to get the number of users
-int countLines(const string& filename = "Output")
+int countLines(const std::string& filename = "Output")
 {
     // Load the singular Values and create the singular matrix
     ifstream infile;
@@ -234,7 +233,7 @@ int countLines(const string& filename = "Output")
     //Always test the file open.
     if(!infile) 
     {
-        cout<<"Error opening output file"<<endl;
+        std::cout<<"Error opening output file"<<std::endl;
         return -1;
     }
 
@@ -242,34 +241,35 @@ int countLines(const string& filename = "Output")
     infile.unsetf(std::ios_base::skipws);
 
     // count the newlines with an algorithm specialized for counting:
-    unsigned line_count = std::count(istream_iterator<char>(infile), istream_iterator<char>(), '\n');
+    unsigned line_count = std::count(std::istream_iterator<char>(infile), std::istream_iterator<char>(), '\n');
 
-    cout << "Lines: " << line_count << "\n";
+    std::cout << "Lines: " << line_count << "\n";
 
     return line_count;
 }
 
 // Get the number of lines from the file to get the number of users
-int countDimension(const string& filename = "Output")
+int countDimension(const std::string& filename = "Output")
 {
     // Load the singular Values and create the singular matrix
-    ifstream infile;
+    std::ifstream infile;
     infile.open(filename.c_str());
 
     //Always test the file open.
     if(!infile) 
     {
-        cout<<"Error opening output file"<<endl;
+        std::cout<<"Error opening output file"<<std::endl;
         return -1;
     }
 
-    string firstline;
+    std::string firstline;
     std::getline(infile, firstline);
-    // Split the currentLine and only return the double parts
-    std::vector<double> splitDouble = split(currentLine);
-    cout << "Lines: " << splitDouble.size() << "\n";
 
-    return splitDouble.size();
+    // Split the firstline and only return the double parts
+    std::vector<double> splitDouble = split(firstline);
+    std::cout << "Lines: " << splitDouble.size() - 1 << "\n";
+
+    return splitDouble.size() - 1;
 }
 
 
@@ -277,16 +277,14 @@ int main(int argc, char** argv)
 {
     std::cout << "Graph partitioning using Dimensionality Reduction and Clustering...\n\n";
 
-    std::string graph_dir;
+    std::string graph_dir = "";
     std::string format = "adj";
     std::string svd_dir = "../collaborative_filtering/";
     std::string kmeans_dir = "../clustering/";
     std::string mpi_args;
-
+    std::string kmeansinput = "kmeansinput.txt";
     size_t num_partitions = 2;
-    bool normalized_cut = true;
-    bool ratio_cut = false;
-    
+
     //parse command line
     graphlab::command_line_options clopts("Graph partitioning (normalized cut)");
     clopts.attach_option("graph", graph_dir, "The graph file. This is not optional. Vertex ids must start from 1 "
@@ -303,12 +301,25 @@ int main(int argc, char** argv)
     if (!clopts.parse(argc, argv))
         return EXIT_FAILURE;
     
-    if (graph_dir == "")
-    {
-        std::cout << "--graph is not optional\n";
+    cout << "Calculating the Cosine Matrix...\n";
+    // Build the cosine Matrix and save it to file name "Output"
+    int errorVal = generate_cosine_matrix();
+    if(errorVal != 0)
         return EXIT_FAILURE;
-    }
+
+    // Count the number of lines(users)
+    size_t num_data = countLines(graph_dir + "ratings_with_id.txt");
     
+    // Count the number of columns(movies)
+    size_t num_cols = countDimension(graph_dir + "ratings_with_id.txt");
+    
+    //determine the rank of Lanczos method
+    size_t rank = get_lanczos_rank(num_partitions, num_data);
+    
+    // detemine the number of partitions
+    num_partitions = (int)(sqrt(num_data))/2;
+ 
+   
     std::vector<std::string> remove_opts;
     remove_opts.push_back("--graph");
     remove_opts.push_back("--format");
@@ -318,39 +329,27 @@ int main(int argc, char** argv)
     remove_opts.push_back("--mpi-args");
     std::string other_args = get_arg_str_without(argc, argv, remove_opts);
 
-    // Build the cosine Matrix and save it to file name "Output"
-    int errorVal = generate_cosine_matrix();
-    if(errorVal != 0)
-        return errorVal;
-
-    // Count the number of lines(users)
-    size_t num_data = countLines(graph_dir + "Output");
-    if(num_data < 0)
-        return num_data;
-    
-    // Count the number of columns(movies)
-    size_t num_cols = countDimension(graph_dir + "Output");
-    if(num_cols < 0)
-        return num_cols;
-
-    //determine the rank of Lanczos method
-    size_t rank = get_lanczos_rank(num_partitions, num_data);
-
+     
     // Run SVD on the matrix stored in Output
     if (call_svd(mpi_args, graph_dir + "Output", svd_dir, num_partitions, rank, num_data, num_cols, other_args) == false)
         return EXIT_FAILURE;
 
     // Use the SVD Output to Calculate the k-rank approximation and store it in kmeansinput.txt
-    errorVal = calculate_kmeans_input();
+    std::cout << "Calculating the K-Rank Approximation...\n"; 
+    errorVal = calculate_kmeans_input(rank);
     if(errorVal != 0)
-        return errorVal;
-
-    // if (call_eigen_vector_normalization(mpi_args, graph_dir, num_partitions, rank, num_data, other_args) == false)
-    //     return EXIT_FAILURE;
-
-    //kmeans
-    if (call_kmeans(mpi_args, graph_dir, kmeans_dir + "kmeansinput.txt", num_partitions, other_args) == false)
         return EXIT_FAILURE;
+
+    // run kmeans
+    std::cout << "Running Kmeans on the output of SVD..\n";
+    if (call_kmeans(mpi_args, kmeansinput, kmeans_dir, num_partitions, other_args) == false)
+        return EXIT_FAILURE;
+    
+    // make kmeans input and other variables global in constants.h
+    std::cout << "Doing Calculations on the Output of the Kmeans...\n";
+    errorVal = visualise_cosine();
+    if(errorVal != 0)
+	return EXIT_FAILURE;
     
     return EXIT_SUCCESS;
 }

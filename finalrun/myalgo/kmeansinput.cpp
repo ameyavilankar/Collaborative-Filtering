@@ -44,7 +44,10 @@ int readSingularValues(MatrixXd& singularMatrix, const string& filename = "Outpu
     infile.clear();
     infile.close();
     
-    cout << "Dimensions of the singular Matrix: " << singularMatrix.rows() << singularMatrix.cols() << "\n";
+    cout << "Dimensions of the singular Matrix: " << singularMatrix.rows() << ", " << singularMatrix.cols() << "\n";
+
+    // return success
+    return 0;
     
 }
 
@@ -74,36 +77,55 @@ int getNumberLines(const string& filename = "OutputU.0_1_of_1")
 }
 
 // Read the uMatrix and the vMatrix from file
-int readMatrices(MatrixXd& uMatrix, MatrixXd& vMatrix)
+int readMatrices(MatrixXd& uMatrix, MatrixXd& vMatrix, size_t rank)
 {
     double temp = 0;
-    int count = 0;
+    int  ulineNumber = 0;
+    int vlineNumber = 0;
+    string splitLine;
+    vector<double> splitDouble;
 
-    for(int i =0; i < NUM_EIGEN_VALUES; ++i)
+    cout << "uMatrix: " << uMatrix.rows() << ", " << uMatrix.cols() << "\n";
+    cout << "vMatrix: " << vMatrix.rows() << ", " << vMatrix.cols() << "\n";
+    
+    for(int i = 0; i < rank; ++i)
     {
+	cout << "Reading in " << i << "\n ";
         ifstream infileU, infileV;
-        infileU.open(("OutputU." + to_string(i) + "_1_of_1").c_str());
-        infileV.open(("OutputV." + to_string(i) + "_1_of_1").c_str());
-
-        count = 0;
-        while(infileU >> temp)
-            uMatrix(count++, i) = temp;
-
-        count = 0;
-        while(infileV >> temp)
-            vMatrix(count++, i) = temp;
-
+        infileU.open(("Output.U." + to_string(i) + "_1_of_1").c_str());
+        infileV.open(("Output.V." + to_string(i) + "_1_of_1").c_str());
+	
+	ulineNumber = 0;
+        while(std::getline(infileU, splitLine))
+	{
+	    splitDouble = split(splitLine);
+	    //cout << ulineNumber << " , " << i << " " << splitDouble[1] << "\n";
+	    uMatrix(ulineNumber++, i) = splitDouble[1];
+	}
+	
+	vlineNumber = 0;
+        while(std::getline(infileV, splitLine))
+	{
+	    splitDouble = split(splitLine);
+	    //cout << vlineNumber  << " , " << i << " " << splitDouble[1] << "\n";
+            vMatrix(vlineNumber++, i) = splitDouble[1];
+	}
+	
         infileU.close();
         infileV.close();
     }
-
+    
+    return 0;   
 }
 
 void calculateOutput(MatrixXd& uMatrix, MatrixXd& vMatrix, MatrixXd& singularMatrix, MatrixXd& output)
 {
     // Calculate the output
-    output = (uMatrix.dot(singularMatrix)).dot(vMatrix.transpose());
+    MatrixXd left = (uMatrix * singularMatrix);
+
+    output = left * vMatrix.transpose();
 }
+
 
 int saveOutput(MatrixXd& output, const string& filename = "kmeansinput.txt")
 {
@@ -111,47 +133,69 @@ int saveOutput(MatrixXd& output, const string& filename = "kmeansinput.txt")
     ofstream outfile;
     outfile.open(filename.c_str());
     
-    if(outfile)
-        outfile << output;
-    else
-        return -1;
+    if(!outfile)
+    {
+	cout << "Writing kmeansinput failed!!!\n";
+	return -1;
+    }
+    
+    for(int i = 0; i < output.rows(); i++)
+    {
+	// Output the id to the file
+	outfile << i << " ";
+
+	for(int j = 0; j < output.cols(); j++)
+	    outfile << output(i, j) << " ";
+	
+	outfile << "\n";
+
+    }
 
     outfile.close();
+    
+    // return sucess
     return 0;
 }
 
-int calculate_kmeans_input()
+int calculate_kmeans_input(size_t rank)
 {
+    std::cout << "Reading the Singular Values into Eigen Matrix...\n";
     // create a matrix of vectors
-    MatrixXd singularMatrix =  MatrixXd::Zero(NUM_EIGEN_VALUES, NUM_EIGEN_VALUES);
-    // vector<vector<double> > singularMatrix(NUM_EIGEN_VALUES, vector<double>(NUM_EIGEN_VALUES));
+    MatrixXd singularMatrix =  MatrixXd::Zero(rank, rank);
     
-    int errorVal = readSingularValues(singularMatrix, "Outputsingular_values");
+    int errorVal = readSingularValues(singularMatrix, "Output.singular_values");
     if(errorVal != 0)
         return errorVal;
-
+     
+    std::cout << "Calculating the Number of users..\n";
+    
     // Calculate the number of lines the UMatrix file to get the number of users
-    int numberOfUsers = getNumberLines("OutputU.0_1_of_1");
+    int numberOfUsers = getNumberLines("Output.U.0_1_of_1");
     if(numberOfUsers == -1)
         return numberOfUsers;
 
     // Create the UMatrix and VMatrix
-    MatrixXd uMatrix = MatrixXd::Zero(numberOfUsers, NUM_EIGEN_VALUES);
-    MatrixXd vMatrix = MatrixXd::Zero(NUM_FEATURES, NUM_EIGEN_VALUES);
-
+    MatrixXd uMatrix = MatrixXd::Zero(numberOfUsers, rank);
+    MatrixXd vMatrix = MatrixXd::Zero(NUM_FEATURES, rank);
+    
+    std::cout << "Reading in the UMatrix and VMatrix...\n";
+    
     // Read the UMatrix and the VMatrix
-    errorVal = readMatrices(uMatrix, vMatrix);
+    errorVal = readMatrices(uMatrix, vMatrix, rank);
     if(errorVal != 0)
         return errorVal;
 
     // Used to store the output result
-    MatrixXd output == MatrixXd::Zero(numberOfUsers, NUM_FEATURES);
+    MatrixXd output = MatrixXd::Zero(numberOfUsers, NUM_FEATURES);
 
+    std::cout << "Calculating the Output Matrix...\n";
     // Calculate the Output vector
     calculateOutput(uMatrix, vMatrix, singularMatrix, output);
-
+    
+    std::cout << "Saving the Output to file...\n";
     // Save the output file to be used by kmeans
     errorVal = saveOutput(output, "kmeansinput.txt");
+    
     if(errorVal != 0)
         return errorVal;
 

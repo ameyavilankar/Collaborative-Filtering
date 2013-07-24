@@ -72,7 +72,7 @@ void getRandomAndClusterUsers(vector<long>& userVector, map<long, int> clusterUs
     cout<<"Count: "<<count<<" , ClusterUsers: "<<clusterUsers.size()<<"\n";
 
     // Randomly select the remaining number of users
-    vector<long >::iterator newBegin = random_unique(userVector.begin() + count, userVector.end(), NUM_FEATURES - count);
+    random_unique(userVector.begin() + count, userVector.end(), NUM_FEATURES - count);
 
     userVector.resize(NUM_FEATURES);
 }
@@ -104,7 +104,7 @@ int generate_cosine_matrix()
     // getRandomAndClusterUsers(userVector, clusterUsers);
 
     // Randomly select the remaining number of users
-    vector<long >::iterator newBegin = random_unique(userVector.begin() , userVector.end(), NUM_FEATURES);
+    random_unique(userVector.begin() , userVector.end(), NUM_FEATURES);
 
     userVector.resize(NUM_FEATURES);
     

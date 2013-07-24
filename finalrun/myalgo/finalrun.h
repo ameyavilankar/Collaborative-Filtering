@@ -9,7 +9,7 @@
 #include "cosine_main.cpp"
 
 #include "visualise.h"
-#include "visualise.cpp"
+#include "visualise_cosine.cpp"
 
 #include "kmeansinput.h"
 #include "kmeansinput.cpp"

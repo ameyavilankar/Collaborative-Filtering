@@ -42,7 +42,7 @@ template<class fwditer>fwditer random_unique(fwditer begin, fwditer end, size_t 
 	// Find the Number of Elements between begin and end
 	size_t left = std::distance(begin, end);
 	
-	if(left < num_random || num_random < 0)
+	if(left < num_random)
 	{
 		std::cout<<"Cannot generate enough Random Variables.\n";
 		return begin;

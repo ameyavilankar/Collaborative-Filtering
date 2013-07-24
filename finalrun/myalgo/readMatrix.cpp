@@ -78,6 +78,8 @@ int getRatingMatrix(const char* filename, map< long, vector<double> >& ratingMat
 		// Add it to the ratingMatrix
 		//ratingMatrix.push_back(vector<double>(splitDouble.begin() + 1, splitDouble.end()));
 		ratingMatrix[splitDouble[0]] = vector<double>(splitDouble.begin() + 1, splitDouble.end());
+
+		userCount++;
     }
 
 	//std::cout<<"Maximum Number of Users: "<<ratingMatrix.size()<<endl;
