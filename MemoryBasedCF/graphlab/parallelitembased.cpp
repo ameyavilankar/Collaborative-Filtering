@@ -27,12 +27,14 @@
  * \brief This file contains a GraphLab based implementation of the
  * Item Based Collaboarive Filtering.
  *
- * \author Ameya Vilankar, Pipefish LLC.
+ * \author Ameya Vilankar, Pipefish LLC <ameya.vilankar@gmail.com>.
+ * Co-authors: Danny Bickson <danny.bickson@gmail.com>
+ 			   Yucheng Low <ylow@cs.cmu.edu>
  */
 
-#include <boost/math/special_functions/gamma.hpp>
 #include <vector>
 #include <algorithm>
+#include <boost/math/special_functions/gamma.hpp>
 #include <boost/config/warning_disable.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/phoenix_core.hpp>
@@ -44,8 +46,23 @@
 #include <graphlab/util/stl_util.hpp>
 #include "stats.hpp"
 
-const int SAFE_NEG_OFFSET = 2; //add 2 to negative node id
-//to prevent -0 and -1 which arenot allowed
+/*
+enum DISTANCE_METRICS{
+  JACKARD = 0,
+  AA = 1,
+  RA = 2,
+  PEARSON = 3,
+  COSINE = 4,
+  CHEBYCHEV = 5,
+  MANHATTEN = 6,
+  TANIMOTO = 7,
+  LOG_LIKELIHOOD = 8,
+  JACCARD_WEIGHT = 9
+};
+*/
+
+//add 2 to negative node id to prevent -0 and -1 which are not allowed as vertex ids
+const int SAFE_NEG_OFFSET = 2; 
 
 // Type for the Item-id
 typedef int item_id_type;
@@ -495,6 +512,11 @@ public:
 
 };
 
+
+//
+
+
+
 // TODO: Define a different gather type that will contain all the totals and the similarity score.
 // Refer the CF sequential code.
 class get_recommendation_program:
@@ -551,23 +573,71 @@ public:
 
 int main(int argc, char** argv)
 {
+	// Parse command line options -----------------------------------------------
+	const std::string description = "Carry out Item Based Collaborative Filtering.";
+	graphlab::command_line_options clopts(description);
+	std::string input_dir;
+	std::string predictions;
+	std::string exec_type = "synchronous";
+	int min_allowed_intersection = 1;
+	
+	// TODO: Add more commandlines
+	clopts.attach_option("predictions", predictions,
+	                   "The prefix (folder and filename) to save predictions.");
+	clopts.attach_option("engine", exec_type, 
+	                   "The engine type synchronous or asynchronous");
+	clopts.attach_option("min_allowed_intersection", min_allowed_intersection,
+						"The minimum number of common users that have rated two items for considering for similarity computation.")
+	parse_implicit_command_line(clopts);
+
+	if(!clopts.parse(argc, argv) /*|| input_dir == ""*/)
+	{
+		std::cout << "Error in parsing command line arguments." << std::endl;
+		clopts.print_description();
+		return EXIT_FAILURE;
+	}
+	
 	// Initialize MPI
     graphlab::mpi_tools::init(argc, argv);
     // Construct distributed control object
     graphlab::distributed_control dc;
 
+    
+    dc.cout() << "Loading Graph...\n";
+    graphlab::timer timer;
     // Create the distributed graph object
-    graph_type graph(dc);
+    timer.start();
+    graph_type graph(dc, clopts);
     // Load the graph in parallel on multiple machines using the parser function
     graph.load("graph.txt", graph_loader);
+    dc.cout() << "Loading Graph Finished in " << timer.current_time() << "\n";
 
+
+    dc.cout() << "Finalizing Graph...\n";
+    timer.start();
     // Commit the graph and distribute it across machines
     graph.finalize();
+    dc.cout() << "Finalizing Graph finished in " << timer.current_time() << "\n";
 
-    // --------------------------------------------------
-    dc.cout() << "Debug Information:\n";
-    dc.cout() << "Number of Vertices: " << graph.num_vertices() 
-    		  << ", Number of Edges: " << graph.num_edges() << "\n";
+
+  	dc.cout() 
+		<< "========== Graph statistics on proc " << dc.procid() 
+		<< " ==============="
+		<< "\n Num vertices: " << graph.num_vertices()
+		<< "\n Num edges: " << graph.num_edges()
+		<< "\n Num replica: " << graph.num_replicas()
+		<< "\n Replica to vertex ratio: " 
+		<< float(graph.num_replicas())/graph.num_vertices()
+		<< "\n --------------------------------------------" 
+		<< "\n Num local own vertices: " << graph.num_local_own_vertices()
+		<< "\n Num local vertices: " << graph.num_local_vertices()
+		<< "\n Replica to own ratio: " 
+		<< (float)graph.num_local_vertices()/graph.num_local_own_vertices()
+		<< "\n Num local edges: " << graph.num_local_edges()
+		<< "\n Edge balance ratio: " 
+		<< float(graph.num_local_edges())/graph.num_edges()
+		<< std::endl;
+
 
     dc.cout() << "Getting the User Vertex set...\n";
     graphlab::vertex_set user_set = graph.select(is_user);
@@ -580,23 +650,42 @@ int main(int argc, char** argv)
     dc.cout() << "Number of Items in Graph: " << num_items << "\n"; 
     
     // --------------------------------------------------
+    // TODO: Replace sync with string
     dc.cout() << "Calculating User average and items rated by user...\n";
-    graphlab::omni_engine<user_vertex_program> user_engine(dc, graph, "sync");
+    graphlab::omni_engine<user_vertex_program> user_engine(dc, graph, exec_type, clopts);
     user_engine.signal_vset(user_set);
     user_engine.start();
     
     dc.cout() << "Calculating Item average and list of items to compare to...\n";
-    graphlab::omni_engine<item_vertex_program> item_engine(dc, graph, "sync");
+    graphlab::omni_engine<item_vertex_program> item_engine(dc, graph, exec_type, clopts);
     item_engine.signal_vset(item_set);
     item_engine.start();
 
-    // Save the results stored in the graph
-    graph.save("output",
-            graph_writer(),
-            false, 	// set to true if each output file is to be gzipped
-            true, 	// whether vertices are saved
-            false); // whether edges are saved
+    // Save the predictions if indicated by the user
+    if(!predictions.empty())
+    {
+	    std::cout << "Saving the Recommended Items for each User...\n";
+	    const bool gzip_output = false;
+	    const bool save_vertices = true;
+	    const bool save_edges = false;
+	    const size_t threads_per_machine = 2;
 
-	// Close MPI
+	    //save the predictions
+	    graph.save(predictions, graph_writer(),
+	               gzip_output, save_vertices, 
+	               save_edges, threads_per_machine);
+
+	    /*
+	    //save the linear model
+	    graph.save(predictions + ".U", linear_model_saver_U(),
+			gzip_output, save_edges, save_vertices, threads_per_machine);
+	    graph.save(predictions + ".V", linear_model_saver_V(),
+			gzip_output, save_edges, save_vertices, threads_per_machine);
+		*/
+	}
+
+	// Close MPI and return success
 	graphlab::mpi_tools::finalize();
-}
+	return EXIT_SUCCESS;
+
+}// end of main
