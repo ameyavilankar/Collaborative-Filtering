@@ -75,6 +75,22 @@ inline rated_items_type& operator+=(rated_items_type& left, const rated_items_ty
 	return left;
 }
 
+/**
+* \brief This is used to find the intersection (common users) for two items in distance calculation
+*
+*/
+inline rated_items_type& intersect(const rated_items_type& left, const rated_items_type& right)
+{
+	rated_items_type intersection;
+
+	// Find the users common in both left and right maps and add them to intersection
+	for(rated_items_type::const_iterator cit = left.begin(); cit != left.end(); cit++)
+		if(right.find(cit->first) != right.end())
+			intersection[cit->first] = 1;
+
+	return intersection;
+}
+
 /*
 * \brief The id of the user/item.
 */
@@ -189,53 +205,54 @@ typedef graphlab::distributed_graph<vertex_data, edge_data> graph_type;
  */
 bool graph_loader(graph_type& graph, const std::string& fname, const std::string& line)
 {
-  // Check for empty lines
-  ASSERT_FALSE(line.empty());
+	// Check for empty lines
+	ASSERT_FALSE(line.empty());
 
-  // Shorten Namespaces
-  namespace qi = boost::spirit::qi;
-  namespace ascii = boost::spirit::ascii;
-  namespace phoenix = boost::phoenix;
+	// Shorten Namespaces
+	namespace qi = boost::spirit::qi;
+	namespace ascii = boost::spirit::ascii;
+	namespace phoenix = boost::phoenix;
 
-  // Used to store the vertex ids for items and users
-  graphlab::vertex_id_type user_id(-1), item_id(-1);
+	// Used to store the vertex ids for items and users
+	graphlab::vertex_id_type user_id(-1), item_id(-1);
 
-  // Used to store the rating on the edge
-  double rating = 0;
+	// Used to store the rating on the edge
+	double rating = 0;
 
-  // Read using the boost libraries
-  const bool success = qi::phrase_parse
-    (line.begin(), line.end(),       
-     //  Begin grammar
-     (
-      qi::ulong_[phoenix::ref(user_id) = qi::_1] >> -qi::char_(',') >>
-      qi::ulong_[phoenix::ref(item_id) = qi::_1] >> -qi::char_(',') >>
-      qi::ulong_[phoenix::ref(rating) = qi::_1]
-      )
-     ,
-     //  End grammar
-     ascii::space);
+	// Read using the boost libraries
+	const bool success = qi::phrase_parse
+	(line.begin(), line.end(),       
+		//  Begin grammar
+		(
+		qi::ulong_[phoenix::ref(user_id) = qi::_1] >> -qi::char_(',') >>
+		qi::ulong_[phoenix::ref(item_id) = qi::_1] >> -qi::char_(',') >>
+		qi::ulong_[phoenix::ref(rating) = qi::_1]
+		)
+	,
+	//  End grammar
+	ascii::space);
 
-  // Quit if the reading failed
-  if(!success)
-    return false;  
-  
-  // Since this is a bipartite graph I need a method to number the
-  // user and item/movie vertices differently.  To accomplish I make sure
-  // all vertices have non-zero ids and then negate the user vertex.
-  // Unfortunatley graphlab reserves -1 and so we add 2 and negate.
-  // Resulting user_id after adding 2, cannot be 1 because negating it would result 
-  // in -1 which is reserved
-  user_id += 2;
-  ASSERT_GT(user_id, 1);
-  user_id = -user_id;
-  ASSERT_NE(user_id, item_id);
+	// Quit if the reading failed
+	if(!success)
+		return false;  
 
-  // Create an edge and add it to the graph
-  graph.add_edge(user_id, item_id, edge_data(rating));
-  
-  // successful load
-  return true;
+	// Since this is a bipartite graph I need a method to number the
+	// user and item/movie vertices differently.  To accomplish I make sure
+	// all vertices have non-zero ids and then negate the user vertex.
+	// Unfortunatley graphlab reserves -1 and so we add 2 and negate.
+	// Resulting user_id after adding 2, cannot be 1 because negating it would result 
+	// in -1 which is reserved
+	user_id += 2;
+	ASSERT_GT(user_id, 1);
+	user_id = -user_id;
+	ASSERT_NE(user_id, item_id);
+
+	// Create an edge and add it to the graph
+	graph.add_edge(user_id, item_id, edge_data(rating));
+
+	// successful load
+	return true;
+
 }; // end of graph 
 
 
@@ -246,8 +263,9 @@ bool graph_loader(graph_type& graph, const std::string& fname, const std::string
  * For simplicity we connect users --> items and therefore if a vertex
  * has in edges then it is a item.
  */
-inline bool is_item(const graph_type::vertex_type& vertex) {
-  return vertex.num_in_edges() > 0 ? 1 : 0;
+inline bool is_item(const graph_type::vertex_type& vertex)
+{
+	return vertex.num_in_edges() > 0 ? 1 : 0;
 }
 
 
@@ -257,16 +275,18 @@ inline bool is_item(const graph_type::vertex_type& vertex) {
  * For simplicity we connect users --> items and therefore if a vertex
  * has out edges then it is a user
  */
-inline bool is_user(const graph_type::vertex_type& vertex) {
-  return vertex.num_out_edges() > 0 ? 1 : 0;
+inline bool is_user(const graph_type::vertex_type& vertex)
+{
+	return vertex.num_out_edges() > 0 ? 1 : 0;
 }
 
 
 /**
  * \brief Get the other vertex in the edge.
  */
-inline graph_type::vertex_type get_other_vertex(const graph_type::edge_type& edge, const graph_type::vertex_type& vertex) {
-  return vertex.id() == edge.source().id()? edge.target() : edge.source();
+inline graph_type::vertex_type get_other_vertex(const graph_type::edge_type& edge, const graph_type::vertex_type& vertex)
+{
+	return vertex.id() == edge.source().id()? edge.target() : edge.source();
 }
 
 
