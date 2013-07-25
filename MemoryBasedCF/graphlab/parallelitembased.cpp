@@ -30,10 +30,6 @@
  * \author Ameya Vilankar, Pipefish LLC.
  */
 
-#include <vector>
-#include <algorithm>
-
-#include <graphlab/ui/mongoose/mongoose.h>
 #include <boost/math/special_functions/gamma.hpp>
 #include <vector>
 #include <algorithm>
@@ -48,7 +44,7 @@
 // Type for the Item-id
 typedef int item_id_type;
 
-// Type to store the rating on the edge of the graph
+// Type to store the rating on the edge of the graph(can be changed to int for 0-5 range)
 typedef double rating_type;
 
 // Type for the list of items to be saved on an edge
@@ -60,7 +56,11 @@ typedef std::map<item_id_type, rating_type> rated_items_type;
 */
 inline rated_items_type& operator+=(rated_items_type& left, const rated_items_type& right)
 {
-	// TODO: Self assignment
+	// Handle Self assignment
+	if(left == right)
+		return left;
+
+	// Add entries from right if right is not empty
 	if(!right.empty())
 	{
 		if(left.empty())
@@ -115,19 +115,23 @@ struct vertex_data
 	// The average rating of user..
 	rating_type average_rating;
 
+	// A Map that stores the user rating for an item
+	rated_items_type rated_items;
+
 	// Constructor
-	vertex_data(int id = 0, rating_type avg = 0.0): data_id(id), num_updates(0.0), average_rating(avg) {}
+	vertex_data(int id = 0, rating_type avg = 0.0): data_id(id), num_updates(0.0), average_rating(avg), rated_items() {}
 
 	// Functions to make vertex serializable
 	void save(graphlab::oarchive& arc) const
 	{
-		arc << data_id << num_updates << average_rating;
+		arc << data_id << num_updates << average_rating << rated_items;
 	}
 
 	void load(graphlab::oarchive& arc)
 	{
-		arc >> data_id >> num_updates >> average_rating;
+		arc >> data_id >> num_updates >> average_rating >> rated_items;
 	}
+
 }; // End of the vertex class
 
 
@@ -142,13 +146,13 @@ struct edge_data
 	rating_type rating;
 
 	// To hold the list of rated items
-	rated_items_type rated_items;
+	// NOT NEEDED?? rated_items_type rated_items;
 
 	// To hold the list of similar items
-	rated_items_type similar_items;
+	// NOT NEEDED?? rated_items_type similar_items;
 
 	// Constructor
-	edge_data(rating_type rat = 0.0): rating(rat), rated_items(), similar_items() {}
+	edge_data(rating_type rat = 0.0): rating(rat)/*, rated_items(), similar_items()*/ {}
 
 	// Functions to make edge_data serializable
 	void save(graphlab::oarchive& arc)
@@ -472,3 +476,63 @@ class get_recommendation_program:
 		return edge.data().similar_items;
 	}
 };
+
+// Used to save the results to file
+class graph_writer
+{
+public:
+
+	// TODO save in JSON Format
+	std::string save_vertex(graph_type::vertex_type v)
+	{
+		if(is_user(v))
+		{
+			// Stringstream is slower...replace with boost spirit
+			std::stringstream strm;
+			strm << v.data().data_id << "\t";
+			
+			for(rated_items_type::const_iterator cit = v.data().recommended_items.begin(); cit != v.data().recommended_items.end(); ++cit)
+				strm << "(" << cit->first << ", " << cit_>second << ")"; 
+
+			return strm.str();
+		}
+	}
+
+	// No need to save edge data since it only contatins rating
+	std::string save_edge(graph_type::edge_type e)
+	{ 
+		return ""; 
+	}
+ };
+
+int main(int argc, char** argv)
+{
+	// Initialize MPI
+    mpi_tools::init(argc, argv);
+    // Construct distributed control object
+    graphlab::distributed_control dc;
+
+    // Create the distributed graph object
+    graph_type graph(dc);
+    // Load the graph in parallel on multiple machines using the parser function
+    graph.load("graph.txt", graph_loader);
+
+    // Commit the graph and distribute it across machines
+    graph.finalize();
+
+    // --------------------------------------------------
+    
+    
+
+    // --------------------------------------------------
+    
+    // Save the results stored in the graph
+    graph.save("output",
+            graph_writer(),
+            false, 	// set to true if each output file is to be gzipped
+            true, 	// whether vertices are saved
+            false); // whether edges are saved
+
+	// Close MPI
+	graphlab::mpi_tools::finalize();
+}
