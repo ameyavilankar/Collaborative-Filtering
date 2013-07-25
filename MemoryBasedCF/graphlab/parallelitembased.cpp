@@ -38,8 +38,14 @@
 #include <boost/spirit/include/phoenix_core.hpp>
 #include <boost/spirit/include/phoenix_operator.hpp>
 #include <boost/spirit/include/phoenix_stl.hpp>
-#include <graphlab/parallel/atomic.hpp>
+//#include <graphlab/parallel/atomic.hpp>
 
+#include <graphlab.hpp>
+#include <graphlab/util/stl_util.hpp>
+#include "stats.hpp"
+
+const int SAFE_NEG_OFFSET = 2; //add 2 to negative node id
+//to prevent -0 and -1 which arenot allowed
 
 // Type for the Item-id
 typedef int item_id_type;
@@ -67,7 +73,7 @@ inline rated_items_type& operator+=(rated_items_type& left, const rated_items_ty
 			left = right;
 		else
 		{
-			for(rated_items_type::const_iterator it = right.begin(), it != right.end(); it++)
+			for(rated_items_type::const_iterator it = right.begin(); it != right.end(); it++)
 				left[it->first] = it->second;
 		}
 	}
@@ -79,7 +85,7 @@ inline rated_items_type& operator+=(rated_items_type& left, const rated_items_ty
 * \brief This is used to find the intersection (common users) for two items in distance calculation
 *
 */
-inline rated_items_type& intersect(const rated_items_type& left, const rated_items_type& right)
+inline rated_items_type intersect(const rated_items_type& left, const rated_items_type& right)
 {
 	rated_items_type intersection;
 
@@ -123,7 +129,7 @@ size_t TOPK = 10;
 struct vertex_data
 {
 	// Stores the id on the movie/item
-	int data_id;
+	item_id_type data_id;
 
 	// Total number of times the vertex has been update...incremented everytime apply is run
 	uint32_t num_updates;
@@ -134,18 +140,21 @@ struct vertex_data
 	// A Map that stores the user rating for an item
 	rated_items_type rated_items;
 
+	// recommended items
+	rated_items_type recommended_items;
+
 	// Constructor
 	vertex_data(int id = 0, rating_type avg = 0.0): data_id(id), num_updates(0.0), average_rating(avg), rated_items() {}
 
 	// Functions to make vertex serializable
 	void save(graphlab::oarchive& arc) const
 	{
-		arc << data_id << num_updates << average_rating << rated_items;
+		arc << data_id << num_updates << average_rating << rated_items << recommended_items;
 	}
 
-	void load(graphlab::oarchive& arc)
+	void load(graphlab::iarchive& arc)
 	{
-		arc >> data_id >> num_updates >> average_rating >> rated_items;
+		arc >> data_id >> num_updates >> average_rating >> rated_items >> recommended_items;
 	}
 
 }; // End of the vertex class
@@ -171,7 +180,7 @@ struct edge_data
 	edge_data(rating_type rat = 0.0): rating(rat)/*, rated_items(), similar_items()*/ {}
 
 	// Functions to make edge_data serializable
-	void save(graphlab::oarchive& arc)
+	void save(graphlab::oarchive& arc) const
 	{
 		// TODO rated_items saving
 		arc << rating /* << rated_items << similar_items*/;
@@ -180,7 +189,7 @@ struct edge_data
 	void load(graphlab::iarchive& arc)
 	{
 		// TODO rated_items loading
-		iarc >> rating /* >> rated_items >> similar_items*/;
+		arc >> rating /* >> rated_items >> similar_items*/;
 	}
 
 }; // End of the edge_data class
@@ -242,7 +251,7 @@ bool graph_loader(graph_type& graph, const std::string& fname, const std::string
 	// Unfortunatley graphlab reserves -1 and so we add 2 and negate.
 	// Resulting user_id after adding 2, cannot be 1 because negating it would result 
 	// in -1 which is reserved
-	user_id += 2;
+	user_id += SAFE_NEG_OFFSET;
 	ASSERT_GT(user_id, 1);
 	user_id = -user_id;
 	ASSERT_NE(user_id, item_id);
@@ -253,7 +262,7 @@ bool graph_loader(graph_type& graph, const std::string& fname, const std::string
 	// successful load
 	return true;
 
-}; // end of graph 
+} // end of graph 
 
 
 /**
@@ -306,18 +315,18 @@ struct gather_type
 	gather_type(rating_type rat = 0.0, rated_items_type ri = rated_items_type()): rating(rat), items() {}
 
 	// Constructor: Used to create using rating and rated_items map containing only
-	gather_type(rating_type rat, item_id id): rating(rat)
+	gather_type(rating_type rat, item_id_type id): rating(rat)
 	{
 		items[id] = rating;
 	}
 
 	// Functions to make gather_type serialisable
-	void save(graphlab::oarchive& arc)
+	void save(graphlab::oarchive& arc) const
 	{
 		arc << rating << items;
 	}
 
-	void load(graphlab::ioarchive& arc)
+	void load(graphlab::iarchive& arc)
 	{
 		arc >> rating >> items;
 	}
@@ -325,6 +334,7 @@ struct gather_type
 	// Used to sum up in the gather step
 	gather_type& operator+=(const gather_type& right)
 	{
+		// TODO
 		this->rating += right.rating;
 		this->items += right.items;
 
@@ -334,9 +344,10 @@ struct gather_type
 
 
 class user_vertex_program:
-	public graphlab::ivertex_program<graph_type, gather_type>
+	public graphlab::ivertex_program<graph_type, gather_type>,
 	public graphlab::IS_POD_TYPE
 {
+public:
 	/* \brief Gather on all the IN_EDGES */
 	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
 	{
@@ -347,7 +358,7 @@ class user_vertex_program:
 	* the edge and the rated_items map that contains the item connected to the user
 	* (other vertex)
 	*/
-	gather_type gather_type(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
+	gather_type gather(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
 	{
 		return gather_type(edge.data().rating, edge.target().data().data_id);
 	}
@@ -355,7 +366,7 @@ class user_vertex_program:
 	/**
    	* \brief Calculate the average of all the ratings on the IN_EDGES.
    	*/
-	void apply(icontext_type& context, vertex_type& vertex, const gather_type& total)
+	void apply(icontext_type& context, vertex_type& vertex, const struct gather_type& total)
 	{
 		// Get the number of rated items by the users
 		const size_t num_rated_items = vertex.num_in_edges();
@@ -365,13 +376,13 @@ class user_vertex_program:
 		vertex_data& vdata = vertex.data();
 
 		// Increment the num_updates to the vertex by 1
-		vdata.nupdates++;
+		vdata.num_updates++;
 
 		// Calculate and set the average user rating for the vertex
 		vdata.average_rating = total.rating/num_rated_items;
 
 		// Save the list of the rated items for the scatter step
-		rated_items = total.items;
+		vdata.rated_items = total.items;
 	}
 
 	/* \brief Once we find the map of rated items in the apply step,
@@ -410,9 +421,10 @@ class user_vertex_program:
 
 
 class item_vertex_program:
-	public graphlab::ivertex_program<graph_type, gather_type>
+	public graphlab::ivertex_program<graph_type, gather_type>,
 	public graphlab::IS_POD_TYPE
 {
+public:
 	/* \brief Gather on all the IN_EDGES */
 	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
 	{
@@ -423,7 +435,7 @@ class item_vertex_program:
 	* the edge and the similar_items map that contains all the items rated by the
 	* user on the other vertex of the edge.
 	*/
-	gather_type gather_type(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
+	gather_type gather(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
 	{
 		return gather_type(edge.data().rating, edge.target().data().rated_items);
 	}
@@ -432,7 +444,7 @@ class item_vertex_program:
    	* \brief Calculate the average of all the ratings on the IN_EDGES.
    	* Also aggregate the list of items rated by the user.
    	*/
-	void apply(icontext_type& context, vertex_type& vertex, const gather_type& total)
+	void apply(icontext_type& context, vertex_type& vertex, const struct gather_type& total)
 	{
 		// Get the number of rated items by the users
 		const size_t num_users_rated = vertex.num_out_edges();
@@ -442,13 +454,13 @@ class item_vertex_program:
 		vertex_data& vdata = vertex.data();
 
 		// Increment the num_updates to the vertex by 1
-		vdata.nupdates++;
+		vdata.num_updates++;
 
 		// Calculate and set the average user rating for the vertex
 		vdata.average_rating = total.rating/num_users_rated;
 
 		// Save the list of the rated items for the scatter step
-		rated_items = total.items;
+		vdata.rated_items = total.items;
 	}
 
 	/* \brief Once we find the map of rated items in the apply step,
@@ -465,10 +477,10 @@ class item_vertex_program:
   	*/
   	void scatter(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
   	{
-  		edge.data().similar_items = similar_items;
+  		//edge.data().similar_items = similar_items;
   	}
 
-
+  	/*
   	// Functions to make the class serializable
   	void save(graphlab::oarchive& arc)
   	{
@@ -479,6 +491,8 @@ class item_vertex_program:
   	{
   		arc >> similar_items;
   	}
+  	*/
+
 };
 
 // TODO: Define a different gather type that will contain all the totals and the similarity score.
@@ -499,7 +513,8 @@ class get_recommendation_program:
 	*/
 	rated_items_type gather_type(icontext_type& context, const vertex_data& vertex, edge_type& edge) const
 	{
-		return edge.data().similar_items;
+		// TODO Check
+		return edge.source().data().rated_items;
 	}
 };
 
@@ -518,10 +533,13 @@ public:
 			strm << v.data().data_id << "\t";
 			
 			for(rated_items_type::const_iterator cit = v.data().recommended_items.begin(); cit != v.data().recommended_items.end(); ++cit)
-				strm << "(" << cit->first << ", " << cit_>second << ")"; 
+				strm << "(" << cit->first << ", " << cit->second << ")"; 
 
 			return strm.str();
 		}
+
+		// TODO Check
+		return "\n";
 	}
 
 	// No need to save edge data since it only contatins rating
@@ -534,7 +552,7 @@ public:
 int main(int argc, char** argv)
 {
 	// Initialize MPI
-    mpi_tools::init(argc, argv);
+    graphlab::mpi_tools::init(argc, argv);
     // Construct distributed control object
     graphlab::distributed_control dc;
 
@@ -552,12 +570,12 @@ int main(int argc, char** argv)
     		  << ", Number of Edges: " << graph.num_edges() << "\n";
 
     dc.cout() << "Getting the User Vertex set...\n";
-    vertex_set user_set = graph.select(is_user);
+    graphlab::vertex_set user_set = graph.select(is_user);
     size_t num_users = graph.vertex_set_size(user_set);
-    dc.cout << "Number of Users in Graph: " << num_users << "\n";
+    dc.cout() << "Number of Users in Graph: " << num_users << "\n";
 
     dc.cout() << "Getting the Item Vertex set...\n";
-    vertex_set item_set = graph.select(is_item);
+    graphlab::vertex_set item_set = graph.select(is_item);
     size_t num_items = graph.vertex_set_size(item_set);
     dc.cout() << "Number of Items in Graph: " << num_items << "\n"; 
     
@@ -571,9 +589,6 @@ int main(int argc, char** argv)
     graphlab::omni_engine<item_vertex_program> item_engine(dc, graph, "sync");
     item_engine.signal_vset(item_set);
     item_engine.start();
-
-
-
 
     // Save the results stored in the graph
     graph.save("output",
