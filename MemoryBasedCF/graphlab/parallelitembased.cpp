@@ -315,6 +315,7 @@ struct gather_type
 
 class user_vertex_program:
 	public graphlab::ivertex_program<graph_type, gather_type>
+	public graphlab::IS_POD_TYPE
 {
 	/* \brief Gather on all the IN_EDGES */
 	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
@@ -359,7 +360,8 @@ class user_vertex_program:
 	*/
 	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const
 	{
-    	return graphlab::IN_EDGES;
+		return graphlab::NO_EDGES;
+    	//return graphlab::IN_EDGES;
   	}
 
   	/* \brief Save the map of rated items on each edge so that it can be used by
@@ -367,10 +369,11 @@ class user_vertex_program:
   	*/
   	void scatter(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
   	{
-  		edge.data().rated_items = rated_items;
+  		//edge.data().rated_items = rated_items;
   	}
 
-
+  	/*
+  	NOT NEEDED
   	// Functions to make the class serializable
   	void save(graphlab::oarchive& arc)
   	{
@@ -381,11 +384,14 @@ class user_vertex_program:
   	{
   		arc >> rated_items;
   	}
+
+  	*/
 };
 
 
 class item_vertex_program:
 	public graphlab::ivertex_program<graph_type, gather_type>
+	public graphlab::IS_POD_TYPE
 {
 	/* \brief Gather on all the IN_EDGES */
 	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
@@ -399,7 +405,7 @@ class item_vertex_program:
 	*/
 	gather_type gather_type(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
 	{
-		return gather_type(edge.data().rating, edge.data().rated_items);
+		return gather_type(edge.data().rating, edge.target().data().rated_items);
 	}
 
 	/**
@@ -521,11 +527,34 @@ int main(int argc, char** argv)
     graph.finalize();
 
     // --------------------------------------------------
-    
-    
+    dc.cout() << "Debug Information:\n";
+    dc.cout() << "Number of Vertices: " << graph.num_vertices() 
+    		  << ", Number of Edges: " << graph.num_edges() << "\n";
 
-    // --------------------------------------------------
+    dc.cout() << "Getting the User Vertex set...\n";
+    vertex_set user_set = graph.select(is_user);
+    size_t num_users = graph.vertex_set_size(user_set);
+    dc.cout << "Number of Users in Graph: " << num_users << "\n";
+
+    dc.cout() << "Getting the Item Vertex set...\n";
+    vertex_set item_set = graph.select(is_item);
+    size_t num_items = graph.vertex_set_size(item_set);
+    dc.cout() << "Number of Items in Graph: " << num_items << "\n"; 
     
+    // --------------------------------------------------
+    dc.cout() << "Calculating User average and items rated by user...\n";
+    graphlab::omni_engine<user_vertex_program> user_engine(dc, graph, "sync");
+    user_engine.signal_vset(user_set);
+    user_engine.start();
+    
+    dc.cout() << "Calculating Item average and list of items to compare to...\n";
+    graphlab::omni_engine<item_vertex_program> item_engine(dc, graph, "sync");
+    item_engine.signal_vset(item_set);
+    item_engine.start();
+
+
+
+
     // Save the results stored in the graph
     graph.save("output",
             graph_writer(),
