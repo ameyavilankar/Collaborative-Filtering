@@ -62,6 +62,7 @@ enum DISTANCE_METRICS{
 };
 */
 
+
 /*
 * \brief Add 2 to negative node id to prevent -0 and -1 which are not allowed as vertex ids.
 */
@@ -149,6 +150,48 @@ size_t NUM_ITEMS = 1;
  */
 size_t TOPK = 10;
 
+/**
+ * \brief The number of top similar items to be used in the calculation
+ */
+size_t MIN_ALLOWED_INTERSECTION = 10;
+
+/**
+* \brief Used to calculate the cosine similarity between two sparse vectors
+*/
+double cosineSimilarity(const rated_items_type& one, const rated_items_type& two)
+{
+	rated_items_type oneCommon, twoCommon;
+
+	for(rated_items_type::const_iterator one_it = one.begin(); one_it != one.end(); one_it++)
+	{
+		// if a movie is rated by both one and two
+		if(two.find(one_it->first) != two.end())
+			two[one_it->first] = 0;
+	}
+
+	assert(oneCommon.size() == twoCommon.size());
+
+	if(oneCommon.size() < MIN_ALLOWED_INTERSECTION)
+		return -1;
+	
+	double oneSqrSum = 0.0;
+	double twoSqrSum = 0.0;
+	double prodSum = 0.0;
+	
+	for(map<long, double>::const_iterator one_it = oneCommon.begin(); one_it != oneCommon.end(); one_it++)
+	{
+		prodSum += (one_it->second * twoCommon[one_it->first]);
+		oneSqrSum += one_it->second * one_it->second;
+		twoSqrSum += twoCommon[one_it->first] * twoCommon[one_it->first];
+  	}
+	
+	double denominator = sqrt(oneSqrSum * twoSqrSum);
+	
+	if(denominator == 0)
+		return 0;0
+	else
+		return prodSum/denominator;
+}
 
 /**
  * \brief The vertex data represents each item and user in the
@@ -366,187 +409,95 @@ struct gather_type
 };
 
 
-class user_vertex_program:
-	public graphlab::ivertex_program<graph_type, gather_type>,
-	public graphlab::IS_POD_TYPE
+/*
+* \brief 
+* For User Vertices:
+* The gather_type structure that is made up of the rating on the edge and 
+* the rated_items map that contains the item connected to the user (other vertex) and its rating.
+* 
+* For the Item Vertices:
+* The gather_type structure that is made up of the rating on the edge and 
+* the rated_items map that contains the user connected to the item (other vertex) and its rating.
+*/
+gather_type map_get_sparse_vectors(graph_type::edge_type& edge, const graph_type::vertex_type& other)
 {
-public:
-	/* \brief Gather on all the IN_EDGES */
-	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
-	{
-		return graphlab::IN_EDGES;
-	}
+	return gather_type(edge.data().rating, other.data().data_id);
+}
 
-	/* \brief Return the gather_type structure that is made up of the rating on 
-	* the edge and the rated_items map that contains the item connected to the user
-	* (other vertex)
-	*/
-	gather_type gather(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
-	{
-		return gather_type(edge.data().rating, edge.target().data().data_id);
-	}
-
-	/**
-   	* \brief Calculate the average of all the ratings on the IN_EDGES.
-   	*/
-	void apply(icontext_type& context, vertex_type& vertex, const struct gather_type& total)
-	{
-		// Get the number of rated items by the users
-		const size_t num_rated_items = vertex.num_in_edges();
-		ASSERT_GT(num_rated_items, 0);
-
-		// Get a reference to the vertex data
-		vertex_data& vdata = vertex.data();
-
-		// Increment the num_updates to the vertex by 1
-		vdata.num_updates++;
-
-		// Calculate and set the average user rating for the vertex
-		vdata.average_rating = total.rating/num_rated_items;
-
-		// Save the list of the rated items for the scatter step
-		vdata.rated_items = total.items;
-	}
-
-	/* \brief Once we find the map of rated items in the apply step,
-	* propogate the list on all of the edges so that it can be used by
-	* the items on the other end of the edge.
-	*/
-	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const
-	{
-		return graphlab::NO_EDGES;
-    	//return graphlab::IN_EDGES;
-  	}
-
-  	/* \brief Save the map of rated items on each edge so that it can be used by
-  	* the item on the other side of the edge.
-  	*/
-  	void scatter(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
-  	{
-  		//edge.data().rated_items = rated_items;
-  	}
-
-  	/*
-  	NOT NEEDED
-  	// Functions to make the class serializable
-  	void save(graphlab::oarchive& arc)
-  	{
-  		arc << rated_items;
-  	}
-
-  	void load(graphlab::iarchive arc)
-  	{
-  		arc >> rated_items;
-  	}
-
-  	*/
-};
-
-
-class item_vertex_program:
-	public graphlab::ivertex_program<graph_type, gather_type>,
-	public graphlab::IS_POD_TYPE
+/*
+* \brief
+* For User Vertices:
+* Calculates the average of all the ratings for a user and a sparse vector
+* containing the item_ids and their rating.
+* 
+* For the Item Vertices:
+* Calculates the average of all the ratings for an item and a sparse vector
+* containing the user_ids and their rating.
+*
+*/
+// TODO : confirm whether there should be & for vertex?
+void get_sparse_vectors(engine_type::context& context, graph_type::vertex_type vertex)
 {
-public:
-	/* \brief Gather on all the IN_EDGES */
-	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
+	// Get the number of rated items/users by the users/items
+	const size_t num_rated = vertex.num_in_edges() + vertex.num_in_edges();
+	ASSERT_GT(num_rated, 0);
+
+	// Gather on all the edges to get the average rating and the sparse vector containing the items/users and their ratings
+	gather_type gather_result = warp::map_reduce_neighborhood(vertex, graphlab::ALL_EDGES, map_get_rated_items);
+
+	// Get a reference to the vertex data
+	vertex_data& vdata = vertex.data();
+
+	// Calculate and set the average user/item rating for the vertex
+	vdata.average_rating = gather_result.rating/num_rated_items;
+
+	// Save the sparse of the rated items/users on the current vertex
+	vdata.rated_items = gather_result.items;
+
+	if(is_user(vdata))
 	{
-		return graphlab::OUT_EDGES;
+		for(rated_items_type::iterator it = vdata.rated_items.begin(); it != vdata.rated_items.end(); it++)
+			it->second = 1.0;
 	}
 
-	/* \brief Return the gather_type structure that is made up of the rating on 
-	* the edge and the similar_items map that contains all the items rated by the
-	* user on the other vertex of the edge.
-	*/
-	gather_type gather(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
-	{
-		return gather_type(edge.data().rating, edge.target().data().rated_items);
-	}
+	// Increment the num_updates to the vertex by 1
+	vdata.num_updates++;
+}
 
-	/**
-   	* \brief Calculate the average of all the ratings on the IN_EDGES.
-   	* Also aggregate the list of items rated by the user.
-   	*/
-	void apply(icontext_type& context, vertex_type& vertex, const struct gather_type& total)
-	{
-		// Get the number of rated items by the users
-		const size_t num_users_rated = vertex.num_out_edges();
-		ASSERT_GT(num_users_rated, 0);
-
-		// Get a reference to the vertex data
-		vertex_data& vdata = vertex.data();
-
-		// Increment the num_updates to the vertex by 1
-		vdata.num_updates++;
-
-		// Calculate and set the average user rating for the vertex
-		vdata.average_rating = total.rating/num_users_rated;
-
-		// Save the list of the rated items for the scatter step
-		vdata.rated_items = total.items;
-	}
-
-	/* \brief Once we find the map of rated items in the apply step,
-	* propogate the list on all of the edges so that it can be used by
-	* the items on the other end of the edge.
-	*/
-	edge_dir_type scatter_edges(icontext_type& context, const vertex_type& vertex) const
-	{
-    	return graphlab::OUT_EDGES;
-  	}
-
-  	/* \brief Save the map of rated items on each edge so that it can be used by
-  	* the item on the other side of the edge.
-  	*/
-  	void scatter(icontext_type& context, const vertex_type& vertex, edge_type& edge) const
-  	{
-  		//edge.data().similar_items = similar_items;
-  	}
-
-  	/*
-  	// Functions to make the class serializable
-  	void save(graphlab::oarchive& arc)
-  	{
-  		arc << similar_items;
-  	}
-
-  	void load(graphlab::iarchive arc)
-  	{
-  		arc >> similar_items;
-  	}
-  	*/
-
-};
-
-
-//
-
-
-
-// TODO: Define a different gather type that will contain all the totals and the similarity score.
-// Refer the CF sequential code.
-class get_recommendation_program:
-	public graphlab::ivertex_program<graph_type, rated_items_type>
+rated_items_type map_get_topk(graph_type::edge_type& edge, const graph_type::vertex_type& other)
 {
-	/* \brief Gather on all the in_edges to get the union of the similar movies
-	* 	that should be considered for recommendation.
-	*/
-	edge_dir_type gather_edges(icontext_type& context, const vertex_type& vertex) const
+	// return the list of items rated by the user
+	return other.data().rated_items;
+}
+
+rated_items_type combine(rated_items_type& one, rated_items_type& two)
+{
+
+}
+
+void get_topk(engine_type::context& context, graph_type::vertex_type vertex)
+{
+	rated_items_type top_k = map_reduce_neighborhood(vertex, graphlab::IN_EDGES, map_get_topk);
+
+	// Remove those users who have less than MIN_ALLOWED_INTERESECTION COMMON
+	rated_items_type::iterator it = top_k.begin(); 
+	while (it != top_k.end())
 	{
-		return graphlab::IN_EDGES;
+		if (it->first < MIN_ALLOWED_INTERSECTION)
+			top_k.erase(it++);
+		else
+			it++;
 	}
 
-	/* \brief returns the map of the similar items to the item on the other end of the 
-	* edge.
-	*/
-	rated_items_type gather_type(icontext_type& context, const vertex_data& vertex, edge_type& edge) const
-	{
-		// TODO Check
-		return edge.source().data().rated_items;
-	}
-};
+	// Calculate similarity
+}
 
-// Used to save the results to file
+/*
+* \brief 
+* Graph Writer used to store all the vertex data(The recommended items and their predictions) to file for a user vertex.
+* We don't store anything for an item vertex.
+* We don't store the edge data because it is just the rating.
+*/
 class graph_writer
 {
 public:
@@ -575,7 +526,7 @@ public:
 	{ 
 		return ""; 
 	}
- };
+};
 
 int main(int argc, char** argv)
 {
@@ -655,17 +606,28 @@ int main(int argc, char** argv)
     size_t num_items = graph.vertex_set_size(item_set);
     dc.cout() << "Number of Items in Graph: " << num_items << "\n"; 
     
-    // --------------------------------------------------
-    // TODO: Replace sync with string
-    dc.cout() << "Calculating User average and items rated by user...\n";
-    graphlab::omni_engine<user_vertex_program> user_engine(dc, graph, exec_type, clopts);
-    user_engine.signal_vset(user_set);
-    user_engine.start();
     
+    dc.cout() << "Calculating User average and items rated by user...\n";
     dc.cout() << "Calculating Item average and list of items to compare to...\n";
-    graphlab::omni_engine<item_vertex_program> item_engine(dc, graph, exec_type, clopts);
-    item_engine.signal_vset(item_set);
-    item_engine.start();
+    timer.start();
+	// Creates the warp engine
+	engine_type engine(dc, graph);
+	// Sets the update function to use
+	engine.set_update_function(get_sparse_vectors);
+	// Run the update functions on all the vertices to store their sparse vectors on them
+	engine.signal_all();
+	// Run the engine until scheduler is empty.
+	engine.start();    
+	dc.cout() << "Finished in " << timer.current_time() << "\n";
+
+	// Run map_reduce on all the user vertices to get the global average user vectors
+
+	// Run map_reduce on all the item_vertices to get the global sparse matrix of item vectors
+
+	// Get the list of similar items and the
+	dc.cout() << "Calcute the Top - k similar items for each item...\n";
+	engine.set_update_function();
+	engine.signal();
 
     // Save the predictions if indicated by the user
     if(!predictions.empty())
