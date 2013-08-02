@@ -109,9 +109,7 @@ int getClusterCenters(const char* filename, std::map<int, std::vector<double> >&
 }
 
 
-int findK(const std::string& mpi_args,
-    const std::string& kmeans_dir,
-    const std::string& other)
+int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std::string& other, int& bestK)
 {
      // Create a std::map from the user id to the ratingMatrix
     std::vector<std::vector<double> > ratingMatrix;
@@ -231,7 +229,7 @@ int findK(const std::string& mpi_args,
     }
     
     // Find the number of clusters that resulted in the maximum prediction
-    int bestK = -1;
+    bestK = -1;
     double maxStrength = numeric_limits<double>::min();
     for(std::map<int, double>::const_iterator it = strength.begin(); it != strength.end(); it++)
         if(it->second > maxStrength)
@@ -242,5 +240,5 @@ int findK(const std::string& mpi_args,
 
     std::cout << "The Best K is: " << bestK << "\n";
 
-    return bestK;
+    return 0;
 }
