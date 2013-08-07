@@ -65,10 +65,72 @@ bool call_kmeans(const std::string& mpi_args, const std::string& filename,
     return true;
 }
 
-int generate_reference_datasets(std::map<long, std::vector<double> >& ratingMatrix, int N = 10)
+struct range
+{
+    double min;
+    double max;
+
+    range(double m1, double m2):min(m1), max(m2) {}
+}; 
+
+int generate_reference_datasets(std::map<long, std::vector<double> >& ratingMatrix, const std::string& filename, int N = 10)
 {
     // Get the Number of dimensions
-    int num_dimensions = ratingMatrix[]
+    int num_dimensions = ratingMatrix[ratingMatrix.begin()->first].size();
+
+    // Calculate the min and the max ranges for each column
+    std::vector<range> ranges(num_dimensions);
+
+    for(int i = 0; i < num_dimensions; i++)
+    {
+        double min = numeric_limits<double>::max();
+        double max = numeric_limits<double>::min();
+
+        for(std::map<long, std::vector<double> >::const_iterator it = ratingMatrix.begin(); it != ratingMatrix.end(); it++)
+        {
+            if(it->second[i] < min)
+                min = it->second[i];
+
+            if(it->second[i] > max)
+                max = it->second[i];
+        }
+
+        ranges.push_back(range(min, max));
+    }
+
+    std::cout << "Number of Dimensions: " << ranges.size() << "\n";
+
+    std::cout << "Generating Reference Datasets:\n";    
+    for(int reference_num = 1; reference_num < N; reference_num++)
+    {
+        std::cout << "Generating Reference Dataser No: " << reference_num << "\n";
+
+        // Open the reference file with proper name for writing
+        std::ofstream outFile;
+        std::string reference_filename = filename + to_string(reference_num);
+        outFile.open(reference_filename.c_str());
+
+        for(int i = 0; i < ratingMatrix.size(); i++)
+        {
+            // Output the id to the file
+            outFile << i << " ";
+
+            // Output the uniformally generated row to the fiel
+            for(int j = 0; j < num_dimensions; j++)
+            {
+                // Generate a number uniformally in the min-max range for the current dimension
+                double number = graphlab::random::uniform(ranges[j].min, ranges[j].max);
+                outFile << number << " ";
+            }
+            
+            // To start a new row
+            outFile << "\n";
+        }
+
+        outFile.close();
+    }
+
+    return 0;
 }
 
 
@@ -147,7 +209,7 @@ int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std
     int numberOfUsers = ratingMatrix.size();
 
     // TODO: // Generate a set of Reference datasets save them all to file.
-    errorVal = generate_reference_datasets(ratingMatrix, num_ref_datasets);
+    errorVal = generate_reference_datasets(ratingMatrix, kmeansinput, num_ref_datasets);
     if(errorVal != 0)
     {
         cout << "errorVal = " << errorVal << "\n";
