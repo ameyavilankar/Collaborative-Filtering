@@ -105,6 +105,34 @@ int getClusterCenters(const char* filename, vector<vector<double> >& clusterCent
     return 0;
 }
 
+// Used to read the cluster centers and store them in clusterCenters
+int getClusterCenters(const char* filename, map<long, vector<double> >& clusterCenters)
+{
+    // TODO
+    ifstream myfile(filename);						 // Open the file for getting the input
+    std::string currentLine;						 // To hold the entire currentline
+    std::vector<double> splitDouble;				 // To hold the double values from the currentline
+	
+    //Always test the file open.
+    if(!myfile) 
+    {
+      cout<<"Error opening output file"<<endl;
+      return -1;
+    }
+	
+    // Read till the end of the file
+    while (std::getline (myfile, currentLine)) 
+    {
+    	// Split the currentLine and only return the double parts
+		splitDouble = split(currentLine);
+		
+		// TODO CHECKS for first element of the splitDouble
+		clusterCenters[splitDouble[0]] = (vector<double>(splitDouble.begin() + 1, splitDouble.end()));
+    }
+
+    return 0;
+}
+
 void calculateClusterCenters(map<int, vector<long> >& clusterToUserMap, map<long, vector<double> >& ratingMatrix, map<int, map<long, int> >& clusterUserDistances, map<int, vector<double> >& clusterCenters, map<int, long>& clusterCenterUser)
 {
 	// Keep track of the number of users

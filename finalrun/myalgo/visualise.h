@@ -27,6 +27,15 @@ using std::ofstream;
 using std::min_element;
 using std::distance;
 
+// Gets a mapping from the user to its cluster and cluster to its users
+int getUserToClusterMap(const char* filename, map<long, int>& userToClusterMap, map<int, vector<long> >& clusterToUserMap);
+
+// Used to read the cluster centers and store them in clusterCenters
+int getClusterCenters(const char* filename, vector<vector<double> >& clusterCenters);
+int getClusterCenters(const char* filename, map<int, vector<double> >& clusterCenters);
+
+
+// Desciption at the end of the file
 int visualise_cosine();
 
 /*
