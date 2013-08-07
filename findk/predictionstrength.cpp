@@ -1,5 +1,4 @@
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include "predictionstrength.h"
 
 bool call_kmeans(const std::string& mpi_args, const std::string& filename,
     const std::string& kmeans_dir, const size_t num_clusters,
@@ -36,7 +35,7 @@ bool call_kmeans(const std::string& mpi_args, const std::string& filename,
 }
 
 
-int splitDatasets()
+int splitDatasets(std::map<long, std::vector<double> >& ratingMatrix)
 {
     // Initialize random seed:
     srand (time(NULL));
@@ -49,21 +48,23 @@ int splitDatasets()
 
     int trainCount = 0;
     int testCount = 0;
-    for(int i = 0; i < ratingMatrix.size(); i++)
+    for(std::map<long, std::vector<double> >::const_iterator it = ratingMatrix.begin(); it != ratingMatrix.end(); it++)
     {
         randomNum = ((double) rand() / (RAND_MAX));
         if(randomNum < 0.75)
         {
-            for(int j = 0; j < ratingMatrix[i].size(); j++)
-                outTrain << ratingMatrix[i][j] << " ";
+            outTrain << it->first << " ";
+            for(int j = 0; j < it->second.size(); j++)
+                outTrain << it->second[j] << " ";
             outTrain << "\n";
 
             trainCount++;
         }
         else
         {
-            for(int j = 0; j < ratingMatrix[i].size(); j++)
-                outTest << ratingMatrix[i][j] << " ";
+            outTest << it->first << " ";
+            for(int j = 0; j < it->second.size(); j++)
+                outTest << it->second[j] << " ";
             
             outTest << "\n";            
             testCount++;
@@ -86,12 +87,12 @@ int getClusterCenters(const char* filename, std::map<int, std::vector<double> >&
     // TODO
     std::ifstream myfile(filename);                       // Open the file for getting the input
     std::string currentLine;                         // To hold the entire currentline
-    std::std::vector<double> splitDouble;                 // To hold the double values from the currentline
+    std::vector<double> splitDouble;                 // To hold the double values from the currentline
     
     //Always test the file open.
     if(!myfile) 
     {
-      cout<<"Error opening output file"<<endl;
+      std::cout<<"Error opening output file"<<endl;
       return -1;
     }
     
@@ -109,18 +110,18 @@ int getClusterCenters(const char* filename, std::map<int, std::vector<double> >&
 }
 
 
-int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std::string& other, int& bestK)
+int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std::string& other_args, int& bestK)
 {
      // Create a std::map from the user id to the ratingMatrix
-    std::vector<std::vector<double> > ratingMatrix;
+    std::map<long, std::vector<double> > ratingMatrix;
 
     std::cout<<"Getting the RatingMatrix...\n";
     // Get the ratings into the std::map from the file
     int errorVal =  getRatingMatrix("ratings_with_id.txt", ratingMatrix);
-    std::cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[0].size()<<endl;
+    std::cout<<"RatingMatrix Dimensions: "<<ratingMatrix.size()<<", "<<ratingMatrix[ratingMatrix.begin()->first].size()<<endl;
     int numberOfUsers = ratingMatrix.size();
 
-    int errorVal = splitDatasets(ratingMatrix);
+    errorVal = splitDatasets(ratingMatrix);
     if(errorVal != 0)
         return errorVal;
 
@@ -169,15 +170,15 @@ int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std:
 
         std::cout << "Finding the training cluster assignments for test users..\n";
         std::map<long, int> newClusters;
-        for(std::map<long, std::vector<double> >::const_iterator user_it = ratingMatrix.begin(), user_it != ratingMatrix.end(); user_it++)
+        for(std::map<long, std::vector<double> >::const_iterator user_it = ratingMatrix.begin(); user_it != ratingMatrix.end(); user_it++)
         {
             int trainCluster = 1;
-            double minDistance = numeric_limits<double>::max();
+            double minDistance = std::numeric_limits<double>::max();
             int distance = 0;
 
             for(std::map<int, std::vector<double> >::const_iterator cluster_it = clusterCentersTrain.begin(); cluster_it != clusterCentersTrain.end(); cluster_it++)
             {
-                distance = (exp(-cosineSimilarity(user_it->second, cluster_it->second));
+                distance = (exp(-cosineSimilarity(user_it->second, cluster_it->second)));
                 if(distance < minDistance)
                 {
                     trainCluster = cluster_it->first;
@@ -190,9 +191,11 @@ int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std:
         }
 
         // To hold the cluster prediction strength
-        std::std::map<int, double> clusterStrength;
-        for(std::map<int, std::vector<long> >::const_iterator it = CTUTrainMap.size(); it != CTUTrainMap.end(); it++)
+        std::map<int, double> clusterStrength;
+        for(std::map<int, std::vector<long> >::const_iterator it = CTUTrainMap.begin(); it != CTUTrainMap.end(); it++)
         {
+            int sameClusterCount = 0;
+
             // Find pairs of users that are in the same cluster
             for(int i = 0; i < it->second.size() - 1; i++)
                 for(int j = i; j < it->second.size(); j++)
@@ -206,8 +209,8 @@ int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std:
         }
 
         // Find the minimum prediction strength among all the clusters
-        double predictionStrength = numeric_limits<double>::max();
-        for(std::map<int, double>::const_iterator it = clusterStrength.begin(); it != clusterStrength.end(); it+)
+        double predictionStrength = std::numeric_limits<double>::max();
+        for(std::map<int, double>::const_iterator it = clusterStrength.begin(); it != clusterStrength.end(); it++)
         {
             if(it->second < predictionStrength)
                 predictionStrength = it->second;
@@ -230,7 +233,7 @@ int findK(const std::string& mpi_args, const std::string& kmeans_dir, const std:
     
     // Find the number of clusters that resulted in the maximum prediction
     bestK = -1;
-    double maxStrength = numeric_limits<double>::min();
+    double maxStrength = std::numeric_limits<double>::min();
     for(std::map<int, double>::const_iterator it = strength.begin(); it != strength.end(); it++)
         if(it->second > maxStrength)
         {

@@ -1,35 +1,31 @@
+#include "gapstatistic.h"
+
 /*
+Description of Gap Statistic:
+http://blog.echen.me/2011/03/19/counting-clusters/
+
 For each i from 1 up to some maximum number of clusters,
 
-Run a k-means algorithm on the original dataset to find i clusters, and sum the distance of all
+1. Run a k-means algorithm on the original dataset to find i clusters, and sum the distance of all
 points from their cluster mean. Call this sum the dispersion.
 
-Generate a set of reference datasets (of the same size as the original). One simple way of
+2. Generate a set of reference datasets (of the same size as the original). One simple way of
 generating a reference dataset is to sample uniformly from the original dataset’s bounding 
 rectangle; a more sophisticated approach is take into account the original dataset’s shape
 by sampling, say, from a rectangle formed from the original dataset’s principal components.
 
-Calculate the dispersion of each of these reference datasets, and take their mean.
+3. Calculate the dispersion of each of these reference datasets, and take their mean.
 
-Define the ith gap by: log(mean dispersion of reference datasets) - log(dispersion of original dataset).
+4. Define the ith gap by: log(mean dispersion of reference datasets) - log(dispersion of original dataset).
 
 Once we’ve calculated all the gaps (we can add confidence intervals as well;
 see the original paper for the formula), we can select the number of clusters to be
 the one that gives the maximum gap. (Sidenote: I view the gap statistic as a very
 statistical-minded algorithm, since it compares the original dataset against a set of
 reference “control” datasets.)
+
 */
 
-
-// Run kmeans on the original dataset using the current k
-// Calculate the dispersion for the original dataset
-// Run kmeans for each of the reference datasets...Calculate dispersion for each of them
-// Calculate the mean of the dispersion of all the datasets
-// Calculate the gap using the formula
-
-// Look into the condidence intervals
-
-// Select the cluster with the max gap
 
 bool call_kmeans(const std::string& mpi_args, const std::string& filename,
     const std::string& kmeans_dir, const size_t num_clusters,
@@ -70,7 +66,7 @@ struct range
     double min;
     double max;
 
-    range(double m1, double m2):min(m1), max(m2) {}
+    range(double m1, double m2): min(m1), max(m2) {}
 }; 
 
 int generate_reference_datasets(std::map<long, std::vector<double> >& ratingMatrix, const std::string& filename, int N = 10)
@@ -79,12 +75,12 @@ int generate_reference_datasets(std::map<long, std::vector<double> >& ratingMatr
     int num_dimensions = ratingMatrix[ratingMatrix.begin()->first].size();
 
     // Calculate the min and the max ranges for each column
-    std::vector<range> ranges(num_dimensions);
+    std::vector<range> ranges;
 
     for(int i = 0; i < num_dimensions; i++)
     {
-        double min = numeric_limits<double>::max();
-        double max = numeric_limits<double>::min();
+        double min = std::numeric_limits<double>::max();
+        double max = std::numeric_limits<double>::min();
 
         for(std::map<long, std::vector<double> >::const_iterator it = ratingMatrix.begin(); it != ratingMatrix.end(); it++)
         {
@@ -137,7 +133,7 @@ int generate_reference_datasets(std::map<long, std::vector<double> >& ratingMatr
 int calculate_dispersion(std::string filename, int k, double& dispersion, const std::string& mpi_args, const std::string& kmeans_dir, const std::string& other_args)
 {
     // Create a std::map from the user id to the ratingMatrix
-    std::map<std::vector<double> > ratingMatrix;
+    std::map<long, std::vector<double> > ratingMatrix;
 
     // Read in the Original Dataset
     std::cout<<"Getting the RatingMatrix for " << filename << "...\n";
@@ -159,8 +155,8 @@ int calculate_dispersion(std::string filename, int k, double& dispersion, const 
     cout<<"Geting the userToClusterMap and the clusterToUserMap...\n";
     map<long, int> userToClusterMap;
     map<int, vector<long> > clusterToUserMap;
-    std::string filename = "ratings_with_id.txt.result_k" + to_string(k) + "_1_of_1";
-    int errorVal = getUserToClusterMap(filename.c_str() + to_string(k) + "_1_of_1", userToClusterMap, clusterToUserMap);
+    std::string mapping_file = "ratings_with_id.txt.result_k" + to_string(k) + "_1_of_1";
+    errorVal = getUserToClusterMap(mapping_file.c_str(), userToClusterMap, clusterToUserMap);
     if(errorVal != 0)
         return errorVal;
     cout << "No. of users: " << userToClusterMap.size() << "\n";
@@ -188,10 +184,10 @@ int calculate_dispersion(std::string filename, int k, double& dispersion, const 
     return 0;
 }
 
-int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std::string& kmeansinput,*/ const std::string& other, int& bestK, int num_ref_datasets = 10)
+int findK(const std::string& mpi_args,const std::string& kmeans_dir, std::string& kmeansinput, const std::string& other_args, int& bestK, int num_ref_datasets = 10)
 {
     // Create a std::map from the user id to the ratingMatrix
-    std::map<std::vector<double> > ratingMatrix;
+    std::map<long, std::vector<double> > ratingMatrix;
 
     // TODO: Remove this line
     kmeansinput = "ratings_with_id.txt";
@@ -205,7 +201,7 @@ int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std
         return EXIT_FAILURE;
     }
 
-    std::cout << "RatingMatrix Dimensions: " << ratingMatrix.size() << ", " << ratingMatrix[1].size() << endl;
+    std::cout << "RatingMatrix Dimensions: " << ratingMatrix.size() << ", " << ratingMatrix[ratingMatrix.begin()->first].size() << endl;
     int numberOfUsers = ratingMatrix.size();
 
     // TODO: // Generate a set of Reference datasets save them all to file.
@@ -226,6 +222,7 @@ int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std
 
         std::cout << "Calculate dispersion for the original dataset and the current value of k = " << k << "\n";
         double original_dispersion = 0.0;
+
         errorVal = calculate_dispersion(kmeansinput, k, original_dispersion, mpi_args, kmeans_dir, other_args);
         if(errorVal != 0)
         {
@@ -235,7 +232,7 @@ int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std
 
         std::cout << "Calculate dispersions for the reference datasets and the current value of k = " << k << "\n";
         std::map<int, double> reference_dispersions; 
-        for(int i = 1; i <= num_ref_datasets, i++)
+        for(int i = 1; i <= num_ref_datasets; i++)
         {
             std::cout << i;
             double disp = 0.0;
@@ -265,8 +262,8 @@ int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std
 
 
     // Find the maximum gap statistic
-    double max = numeric_limits<double>::min();
-    int bestK = -1;
+    double max = std::numeric_limits<double>::min();
+    bestK = -1;
     for(map<int, double>::const_iterator it = gapStatistic.begin(); it != gapStatistic.end(); it++)
         if(it->second > max)
         {
@@ -274,7 +271,7 @@ int findK(const std::string& mpi_args,const std::string& kmeans_dir, /*const std
             max = it->second;
         }
 
-    std::cout << "Best Value of K is: " << bestK MM "\n";
+    std::cout << "Best Value of K is: " << bestK << "\n";
 
     return 0;
 }
